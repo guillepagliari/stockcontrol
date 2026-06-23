@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>StockControl Pro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#0f172a;--navy2:#1e293b;--navy3:#334155;
+  --accent:#0ea5e9;--accent2:#0284c7;
+  --success:#10b981;--warn:#f59e0b;--danger:#ef4444;
+  --text:#f8fafc;--text2:#94a3b8;--text3:#64748b;
+  --border:#334155;--card:#1e293b;--surface:#0f172a;
+}
+html,body{min-height:100%;background:var(--surface);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:16px}
+.app{display:flex;flex-direction:column;min-height:100vh}
+
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:420px}
+.login-logo{text-align:center;margin-bottom:1.5rem}
+.login-logo h1{font-size:20px;font-weight:600;letter-spacing:-.5px}
+.login-logo p{font-size:13px;color:var(--text2);margin-top:4px}
+.badge-logo{background:linear-gradient(135deg,#0ea5e9,#0284c7);width:52px;height:52px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px;box-shadow:0 4px 14px #0ea5e940}
+.user-grid{display:grid;gap:8px;margin-bottom:1.25rem}
+.user-card{background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .15s,background .15s}
+.user-card:hover,.user-card.selected{border-color:var(--accent);background:#0ea5e910}
+.user-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.user-info p{font-size:14px;font-weight:500;line-height:1.2}
+.user-info span{font-size:12px;color:var(--text2)}
+.role-badge{margin-left:auto;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;white-space:nowrap}
+.role-admin{background:#0ea5e918;color:var(--accent);border:1px solid #0ea5e940}
+.role-user{background:#10b98118;color:var(--success);border:1px solid #10b98140}
+.btn-primary{width:100%;padding:12px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;box-shadow:0 2px 10px #0ea5e930}
+.btn-primary:active{opacity:.88}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
+
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 1rem;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.topbar-brand{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.topbar-brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;box-shadow:0 0 6px var(--accent)}
+.topbar-name{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.btn-logout{background:transparent;border:1px solid var(--border);color:var(--text2);padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.btn-logout:active{opacity:.7}
+
+.layout{display:flex;flex:1;min-height:0}
+.sidebar{width:192px;background:var(--card);border-right:1px solid var(--border);padding:.75rem 0;flex-shrink:0}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:var(--text3);cursor:pointer;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text2);background:#ffffff06}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:#0ea5e910}
+.nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.nav-section{font-size:9px;font-weight:600;letter-spacing:1.2px;color:var(--text3);padding:8px 14px 3px;margin-top:4px;text-transform:uppercase;opacity:.7}
+.main{flex:1;padding:1.25rem;overflow:auto}
+
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:100;padding:0 0 env(safe-area-inset-bottom,0)}
+.mobile-nav-inner{display:flex;justify-content:space-around}
+.mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;color:var(--text3);font-size:9px;gap:3px;min-height:50px}
+.mnav-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.mnav-item.active{color:var(--accent)}
+.main-mobile-pad{padding-bottom:calc(62px + env(safe-area-inset-bottom,0))}
+
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.25rem}
+@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 15px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent-c,#0ea5e9),transparent)}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.stat-label svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stat-value{font-size:24px;font-weight:600;letter-spacing:-.5px}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem;flex-wrap:wrap;gap:8px}
+.section-title{font-size:15px;font-weight:500}
+
+/* ── refined small buttons ── */
+.btn-sm{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all .12s}
+.btn-sm:active{opacity:.75}
+.btn-sm.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-sm.success{background:var(--success);border-color:var(--success);color:#fff}
+.btn-sm svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── icon action buttons — refined & smaller ── */
+.action-btns{display:flex;gap:3px}
+.icon-btn{background:transparent;border:1px solid transparent;color:var(--text3);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;min-width:28px;min-height:28px}
+.icon-btn:hover{background:var(--navy);border-color:var(--border);color:var(--text)}
+.icon-btn:active{opacity:.7}
+.icon-btn.del:hover{background:#ef444412;border-color:#ef444440;color:var(--danger)}
+.icon-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-toolbar{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-box{flex:1;min-width:120px;position:relative}
+.search-box svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.search-box input{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px 7px 29px;font-size:13px;outline:none}
+.search-box input:focus{border-color:var(--accent)}
+.select-filter{background:var(--navy);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px;outline:none}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:400px}
+th{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#ffffff04}
+
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.pill-in{background:#10b98114;color:#34d399;border:1px solid #10b98130}
+.pill-out{background:#f59e0b14;color:#fbbf24;border:1px solid #f59e0b30}
+.pill-epp{background:#0ea5e914;color:#38bdf8;border:1px solid #0ea5e930}
+.pill-mat{background:#8b5cf614;color:#a78bfa;border:1px solid #8b5cf630}
+.pill-low{background:#ef444414;color:#f87171;border:1px solid #ef444430}
+.pill-ok{background:#10b98114;color:#34d399;border:1px solid #10b98130}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.chip{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3);transition:all .12s}
+.chip.active,.chip:hover{border-color:var(--accent);color:var(--accent);background:#0ea5e910}
+
+.overlay{position:fixed;inset:0;background:#00000090;z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(2px)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px #00000060}
+.panel-title{font-size:14px;font-weight:600;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;color:var(--text)}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:10px;color:var(--text3);margin-bottom:5px;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.form-row input,.form-row select{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;font-family:inherit}
+.form-row input:focus,.form-row select:focus{border-color:var(--accent)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem}
+
+.reg-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start}
+@media(max-width:640px){.reg-wrap{grid-template-columns:1fr}}
+.reg-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+.reg-field{margin-bottom:1rem}
+.reg-field label{display:block;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px}
+.reg-field input,.reg-field select{width:100%;background:var(--navy);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px 14px;font-size:16px;outline:none;font-family:inherit;transition:border-color .15s}
+.reg-field input:focus,.reg-field select:focus{border-color:var(--accent)}
+.prod-hint{margin-top:6px;padding:8px 12px;border-radius:8px;font-size:12px;display:none}
+.prod-hint.found{display:block;background:#10b98110;border:1px solid #10b98130;color:#34d399}
+.prod-hint.notfound{display:block;background:#ef444410;border:1px solid #ef444430;color:#f87171}
+.type-toggle{display:flex;gap:6px;margin-bottom:1rem}
+.type-btn{flex:1;padding:10px 8px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--navy);color:var(--text3);transition:all .15s;text-align:center}
+.type-btn.active-in{border-color:#10b98140;background:#10b98110;color:#34d399}
+.type-btn.active-out{border-color:#f59e0b40;background:#f59e0b10;color:#fbbf24}
+.prod-list{background:var(--navy);border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:420px;overflow-y:auto}
+.prod-list-item{padding:9px 13px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;transition:background .1s}
+.prod-list-item:last-child{border-bottom:none}
+.prod-list-item:active,.prod-list-item:hover{background:#ffffff06}
+
+/* QR */
+.qr-btn{width:100%;padding:12px;border-radius:10px;border:1px dashed #0ea5e940;background:#0ea5e908;color:var(--accent);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:.75rem;transition:background .15s}
+.qr-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.qr-btn:hover,.qr-btn:active{background:#0ea5e915}
+.scanner-modal{position:fixed;inset:0;background:#000;z-index:300;display:flex;flex-direction:column}
+.scanner-header{padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#000a,transparent);position:absolute;top:0;left:0;right:0;z-index:1}
+.scanner-header h2{color:#fff;font-size:14px;font-weight:500}
+.scanner-close{background:#ffffff18;border:1px solid #ffffff30;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer}
+#qrVideo{width:100%;height:100%;object-fit:cover;display:block}
+.scanner-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scanner-frame{width:220px;height:220px;border:2px solid var(--accent);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.6)}
+.scanner-corners::before,.scanner-corners::after{content:'';position:absolute;width:28px;height:28px;border-color:var(--accent);border-style:solid;border-radius:3px}
+.scanner-corners::before{top:-2px;left:-2px;border-width:3px 0 0 3px}
+.scanner-corners::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0}
+.scanner-hint{position:absolute;bottom:2.5rem;left:0;right:0;text-align:center;color:#ffffff90;font-size:12px}
+.scanner-status{position:absolute;bottom:4.5rem;left:0;right:0;text-align:center;color:var(--accent);font-size:12px;font-weight:500}
+
+.user-row-avatar{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem}
+@media(max-width:500px){.export-grid{grid-template-columns:1fr}}
+
+.toast{position:fixed;bottom:calc(68px + env(safe-area-inset-bottom,0));right:14px;background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;z-index:999;display:flex;align-items:center;gap:8px;animation:toastIn .2s ease;max-width:260px;box-shadow:0 4px 20px #0008}
+@media(min-width:641px){.toast{bottom:18px}}
+.toast svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.toast.ok svg{color:var(--success)}
+.toast.err svg{color:var(--danger)}
+@keyframes toastIn{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.empty{padding:2rem;text-align:center;color:var(--text3);font-size:13px}
+.empty svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;margin-bottom:6px;display:block;margin-inline:auto;opacity:.5}
+
+@media(max-width:640px){
+  .sidebar{display:none}
+  .mobile-nav{display:block}
+  .main{padding:1rem;padding-bottom:0}
+  .main-mobile-pad{padding-bottom:calc(62px + env(safe-area-inset-bottom,0))}
+  .reg-wrap{grid-template-columns:1fr}
+  .dashboard-grid{grid-template-columns:1fr!important}
+  table{min-width:360px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<div class="loading-screen" id="loadingScreen" style="position:fixed;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px">
+  <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spcSpin .7s linear infinite"></div>
+  <p style="font-size:13px;color:var(--text2)">Conectando con la base de datos...</p>
+</div>
+<style>@keyframes spcSpin{to{transform:rotate(360deg)}}</style>
+
+<div class="login-screen" id="loginScreen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="badge-logo">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      </div>
+      <h1>StockControl Pro</h1>
+      <p>Gestión de materiales y EPP</p>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Seleccioná tu usuario:</p>
+    <div class="user-grid" id="userGrid"></div>
+    <div class="form-row" id="pwdRow" style="display:none">
+      <label>Contraseña</label>
+      <input type="password" id="loginPwd" placeholder="••••" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()" oninput="document.getElementById('loginError').style.display='none'">
+      <div id="loginError" style="display:none;color:#f87171;font-size:12px;margin-top:6px">Contraseña incorrecta</div>
+    </div>
+    <button class="btn-primary" id="loginBtn" disabled onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<div style="display:none;flex-direction:column;flex:1" id="mainApp">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="dot"></div><span>StockControl Pro</span></div>
+    <span class="topbar-name" id="topbarUser"></span>
+    <button class="btn-logout" onclick="logout()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Salir
+    </button>
+  </div>
+  <div class="layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main main-mobile-pad" id="mainContent"></div>
+  </div>
+  <nav class="mobile-nav" id="mobileNav"></nav>
+</div>
+
+</div>
+
+<!-- QR Scanner -->
+<div class="scanner-modal" id="scannerModal" style="display:none">
+  <div class="scanner-header">
+    <h2>Escanear código</h2>
+    <button class="scanner-close" onclick="closeScanner()">✕ Cerrar</button>
+  </div>
+  <video id="qrVideo" playsinline autoplay muted></video>
+  <div class="scanner-overlay">
+    <div class="scanner-frame" style="position:relative">
+      <div class="scanner-corners"></div>
+    </div>
+  </div>
+  <div class="scanner-status" id="scannerStatus"></div>
+  <div class="scanner-hint">Apuntá la cámara al código</div>
+</div>
+
+<div id="overlayContainer"></div>
+<div id="toastContainer"></div>
+
+<script>
+// ── SVG ICONS (inline, refined 1.7px stroke, 13–16px) ──────────
+const I = {
+  edit:`<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  trash:`<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`,
+  check:`<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+  x:`<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  alert:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  search:`<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  inbox:`<svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>`,
+  plus:`<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  scan:`<svg viewBox="0 0 24 24"><polyline points="23 7 23 1 17 1"/><line x1="16" y1="8" x2="23" y2="1"/><polyline points="1 17 1 23 7 23"/><line x1="8" y1="16" x2="1" y2="23"/><line x1="1" y1="8" x2="23" y2="8"/></svg>`,
+  download:`<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  logout:`<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+  // nav
+  nav_dashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`,
+  nav_movements:`<svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>`,
+  nav_register:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+  nav_products:`<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  nav_users:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
+  nav_export:`<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+};
+
+// ── SUPABASE CONFIG ──────────────────────────────────────────────
+const SUPA_URL = 'https://srjnxgvdlcqmkxnnbclq.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyam54Z3ZkbGNxbWt4bm5iY2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDQ5NjQsImV4cCI6MjA5NzM4MDk2NH0.OSyfMQ5s639BQXdEGfUqDMn9ZCubuiRpXt3utyux9P4';
+const H = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+
+async function sbGet(table, params=''){
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, { headers: H });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbInsert(table, body){
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, { method:'POST', headers: H, body: JSON.stringify(body) });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbUpdate(table, id, body){
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, { method:'PATCH', headers: H, body: JSON.stringify(body) });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbDelete(table, id){
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: H });
+  if(!r.ok) throw new Error(await r.text());
+}
+
+// ── DATA (loaded from Supabase into memory) ──────────────────────
+let DB = { users:[], products:[], movements:[], categories:[], categoryIds:{} };
+
+async function loadAll(){
+  try{
+    const [users, products, movements, categories] = await Promise.all([
+      sbGet('app_users','order=name'),
+      sbGet('products','order=code'),
+      sbGet('movements','order=date.desc,created_at.desc'),
+      sbGet('categories','order=name'),
+    ]);
+    DB.users = users.map(u=>({...u}));
+    DB.products = products.map(p=>({...p, minStock:p.min_stock}));
+    DB.movements = movements.map(m=>({...m, productId:m.product_id, productName:m.product_name, code:m.product_code, userId:m.user_id, userName:m.user_name}));
+    DB.categories = categories.map(c=>c.name);
+    DB.categoryIds = {};
+    categories.forEach(c=>{ DB.categoryIds[c.name]=c.id; });
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+    renderLogin();
+  }catch(e){
+    document.getElementById('loadingScreen').innerHTML=`<div style="text-align:center;padding:2rem;color:#f87171;max-width:340px"><p style="font-size:15px;font-weight:500;margin-bottom:8px">Error al conectar</p><p style="font-size:13px;color:var(--text2);margin-bottom:16px;word-break:break-word">${e.message}</p><button onclick="location.reload()" class="btn-primary" style="width:auto;padding:10px 24px">Reintentar</button></div>`;
+  }
+}
+
+// ── STATE ────────────────────────────────────────────────────────
+let currentUser=null, currentView='dashboard';
+let regType='Salida', regScanned='';
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function toast(msg, type='ok'){
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML=(type==='ok'?I.check:I.alert)+msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+function closeOverlay(){document.getElementById('overlayContainer').innerHTML='';}
+
+// ── LOGIN ─────────────────────────────────────────────────────────
+function renderLogin(){
+  document.getElementById('userGrid').innerHTML=DB.users.map(u=>`
+    <div class="user-card" onclick="selectUser('${u.id}')" id="uc${u.id}">
+      <div class="user-avatar" style="background:${u.color}22;color:${u.color}">${u.initials}</div>
+      <div class="user-info"><p>${u.name}</p><span>${u.role==='admin'?'Administrador':'Operador'}</span></div>
+      <span class="role-badge ${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'Admin':'Usuario'}</span>
+    </div>`).join('');
+}
+function selectUser(id){
+  currentUser=DB.users.find(u=>u.id===id);
+  document.querySelectorAll('.user-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('uc'+id).classList.add('selected');
+  document.getElementById('loginBtn').disabled=false;
+  document.getElementById('pwdRow').style.display='block';
+  document.getElementById('loginError').style.display='none';
+  const pwd=document.getElementById('loginPwd');
+  pwd.value='';
+  setTimeout(()=>pwd.focus(),50);
+}
+function doLogin(){
+  if(!currentUser)return;
+  const pwd=document.getElementById('loginPwd').value;
+  if(pwd!==currentUser.password){
+    document.getElementById('loginError').style.display='block';
+    return;
+  }
+  document.getElementById('loginScreen').style.display='none';
+  const ma=document.getElementById('mainApp');
+  ma.style.display='flex';
+  document.getElementById('topbarUser').textContent=currentUser.name+(currentUser.role==='admin'?' · Admin':'');
+  renderSidebar(); renderMobileNav(); navigate('dashboard');
+}
+function logout(){
+  currentUser=null;
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.querySelectorAll('.user-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('loginBtn').disabled=true;
+  document.getElementById('pwdRow').style.display='none';
+  currentView='dashboard'; regScanned=''; regType='Salida';
+  renderLogin();
+}
+
+// ── NAV ───────────────────────────────────────────────────────────
+function navItems(){
+  const isAdmin=currentUser.role==='admin';
+  return [
+    {id:'dashboard',icon:I.nav_dashboard,label:'Dashboard'},
+    {id:'movements',icon:I.nav_movements,label:'Movimientos'},
+    {id:'register',icon:I.nav_register,label:'Registrar'},
+    ...(isAdmin?[
+      {id:'products',icon:I.nav_products,label:'Productos'},
+      {id:'users',icon:I.nav_users,label:'Usuarios'},
+      {id:'export',icon:I.nav_export,label:'Exportar'},
+    ]:[]),
+  ];
+}
+function renderSidebar(){
+  const isAdmin=currentUser.role==='admin';
+  let html='';
+  navItems().forEach(item=>{
+    if(isAdmin&&item.id==='products') html+=`<div class="nav-section">Admin</div>`;
+    html+=`<div class="nav-item ${currentView===item.id?'active':''}" onclick="navigate('${item.id}')">${item.icon}<span>${item.label}</span></div>`;
+  });
+  document.getElementById('sidebar').innerHTML=html;
+}
+function renderMobileNav(){
+  document.getElementById('mobileNav').innerHTML=`<div class="mobile-nav-inner">${
+    navItems().map(it=>`<div class="mnav-item ${currentView===it.id?'active':''}" onclick="navigate('${it.id}')">${it.icon}<span>${it.label}</span></div>`).join('')
+  }</div>`;
+}
+function navigate(view){
+  const isAdmin=currentUser.role==='admin';
+  const restricted=['products','users','export'];
+  if(!isAdmin && restricted.includes(view)) view='dashboard';
+  currentView=view; renderSidebar(); renderMobileNav();
+  const mc=document.getElementById('mainContent'); mc.scrollTop=0;
+  if(view==='dashboard')renderDashboard(mc);
+  else if(view==='movements')renderMovements(mc);
+  else if(view==='register')renderRegister(mc);
+  else if(view==='products')renderProducts(mc);
+  else if(view==='users')renderUsers(mc);
+  else if(view==='export')renderExport(mc);
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────
+function renderDashboard(el){
+  if(currentUser.role!=='admin'){ renderUserDashboard(el); return; }
+
+  const lowStock=DB.products.filter(p=>p.stock<p.minStock).length;
+  const totalEPP=DB.products.filter(p=>p.category==='EPP').reduce((a,p)=>a+p.stock,0);
+  const today=new Date().toISOString().slice(0,10);
+  const todayMovs=DB.movements.filter(m=>m.date===today).length;
+
+  // EPP retirado por usuario (salidas de productos EPP)
+  const eppMovs=DB.movements.filter(m=>m.type==='Salida'&&DB.products.find(p=>p.id===m.productId&&p.category==='EPP'));
+  const eppByUser={};
+  eppMovs.forEach(m=>{
+    if(!eppByUser[m.userId]) eppByUser[m.userId]={name:m.userName,total:0,items:{}};
+    eppByUser[m.userId].total+=m.qty;
+    eppByUser[m.userId].items[m.productName]=(eppByUser[m.userId].items[m.productName]||0)+m.qty;
+  });
+  // also include users with 0 EPP from nomina
+  DB.users.forEach(u=>{
+    if(!eppByUser[u.id]) eppByUser[u.id]={name:u.name,total:0,items:{}};
+  });
+  const eppList=Object.entries(eppByUser).sort((a,b)=>b[1].total-a[1].total);
+  const maxEPP=Math.max(...eppList.map(([,v])=>v.total),1);
+
+  // Ranking de categorías por consumo (salidas totales)
+  const catConsumption={};
+  DB.movements.filter(m=>m.type==='Salida').forEach(m=>{
+    const p=DB.products.find(pr=>pr.id===m.productId);
+    const cat=p?p.category:'Sin categoría';
+    catConsumption[cat]=(catConsumption[cat]||0)+m.qty;
+  });
+  const catRanking=Object.entries(catConsumption).sort((a,b)=>b[1]-a[1]);
+  const maxCat=Math.max(...catRanking.map(([,v])=>v),1);
+
+  el.innerHTML=`
+    <div class="section-header">
+      <div class="section-title">Dashboard</div>
+      <span style="font-size:11px;color:var(--text3)">${new Date().toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'})}</span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card" style="--accent-c:#0ea5e9"><div class="stat-label">${I.nav_products} Productos</div><div class="stat-value">${DB.products.length}</div><div class="stat-sub">en catálogo</div></div>
+      <div class="stat-card" style="--accent-c:#ef4444"><div class="stat-label" style="color:#f87171">${I.alert} Stock bajo</div><div class="stat-value" style="color:#f87171">${lowStock}</div><div class="stat-sub">bajo mínimo</div></div>
+      <div class="stat-card" style="--accent-c:#10b981"><div class="stat-label" style="color:#34d399">${I.nav_products} EPP</div><div class="stat-value" style="color:#34d399">${totalEPP}</div><div class="stat-sub">unidades EPP</div></div>
+      <div class="stat-card" style="--accent-c:#f59e0b"><div class="stat-label">${I.nav_movements} Hoy</div><div class="stat-value">${todayMovs}</div><div class="stat-sub">movimientos</div></div>
+    </div>
+
+    <!-- Ranking de categorías por consumo -->
+    <div class="section-header" style="margin-top:.25rem"><div class="section-title" style="font-size:13px">Ranking de categorías — mayor consumo (salidas)</div></div>
+    <div class="table-wrap" style="margin-bottom:1rem">
+      <div class="tbl-scroll"><table>
+        <thead><tr><th style="width:36px">#</th><th>Categoría</th><th>Total retirado</th><th style="min-width:160px">Distribución</th></tr></thead>
+        <tbody>
+        ${catRanking.length?catRanking.map(([cat,total],i)=>{
+          const color=catColor(cat);
+          const pct=Math.round((total/maxCat)*100);
+          return`<tr>
+            <td style="color:var(--text3);font-weight:600">${i+1}</td>
+            <td><span class="pill" style="${catPillStyle(cat)}">${cat}</span></td>
+            <td><span style="font-size:16px;font-weight:600;color:${color}">${total}</span> <span style="font-size:11px;color:var(--text3)">u.</span></td>
+            <td>
+              <div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;min-width:100px">
+                <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .3s"></div>
+              </div>
+            </td>
+          </tr>`;
+        }).join(''):`<tr><td colspan="4" class="empty">${I.inbox}Sin movimientos de salida registrados</td></tr>`}
+        </tbody>
+      </table></div>
+    </div>
+
+    <!-- EPP por usuario -->
+    <div class="section-header" style="margin-top:.25rem"><div class="section-title" style="font-size:13px">EPP retirado por usuario — histórico</div></div>
+    <div class="table-wrap" style="margin-bottom:1rem">
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Usuario</th><th>Total retirado</th><th style="min-width:160px">Distribución</th><th>Detalle por EPP</th></tr></thead>
+        <tbody>
+        ${eppList.map(([uid,data])=>{
+          const u=DB.users.find(x=>x.id==uid);
+          const color=u?.color||'#64748b';
+          const pct=maxEPP>0?Math.round((data.total/maxEPP)*100):0;
+          const detalle=Object.entries(data.items).map(([k,v])=>`<span style="display:inline-block;background:${color}18;border:1px solid ${color}30;color:${color};border-radius:12px;padding:1px 7px;font-size:10px;margin:1px 2px">${k}: ${v}</span>`).join('');
+          return`<tr>
+            <td><div style="display:flex;align-items:center;gap:8px">
+              <div style="width:28px;height:28px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${u?.initials||'?'}</div>
+              <span style="font-size:13px">${data.name}</span>
+            </div></td>
+            <td><span style="font-size:16px;font-weight:600;color:${data.total>0?color:'var(--text3)'}">${data.total}</span> <span style="font-size:11px;color:var(--text3)">u.</span></td>
+            <td>
+              <div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;min-width:100px">
+                <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .3s"></div>
+              </div>
+            </td>
+            <td>${detalle||'<span style="color:var(--text3);font-size:11px">Sin retiros</span>'}</td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" class="dashboard-grid">
+      <div>
+        <div class="section-header"><div class="section-title" style="font-size:13px">Stock crítico</div></div>
+        <div class="table-wrap"><div class="tbl-scroll"><table><thead><tr><th>Producto</th><th>Stock</th><th>Mín</th></tr></thead><tbody>
+        ${DB.products.filter(p=>p.stock<p.minStock).map(p=>`<tr>
+          <td>${p.name}</td><td style="color:#f87171;font-weight:600">${p.stock} ${p.unit}</td><td style="color:var(--text3)">${p.minStock}</td>
+        </tr>`).join('')||`<tr><td colspan="3" class="empty">${I.inbox}Sin alertas</td></tr>`}
+        </tbody></table></div></div>
+      </div>
+      <div>
+        <div class="section-header"><div class="section-title" style="font-size:13px">Últimos movimientos</div></div>
+        <div class="table-wrap"><div class="tbl-scroll"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th></tr></thead><tbody>
+        ${DB.movements.slice(-5).reverse().map(m=>`<tr>
+          <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
+          <td>${m.productName}</td>
+          <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
+        </tr>`).join('')}
+        </tbody></table></div></div>
+      </div>
+    </div>`;
+}
+
+// ── DASHBOARD (usuario operador) ──────────────────────────────────
+function renderUserDashboard(el){
+  const now=new Date();
+  const today=now.toISOString().slice(0,10);
+  function daysAgo(n){
+    const d=new Date(now);
+    d.setDate(d.getDate()-n);
+    return d.toISOString().slice(0,10);
+  }
+  const from7=daysAgo(7), from30=daysAgo(30);
+
+  const myMovs=DB.movements.filter(m=>m.userId===currentUser.id);
+  const movs7=myMovs.filter(m=>m.date>=from7 && m.date<=today);
+  const movs30=myMovs.filter(m=>m.date>=from30 && m.date<=today);
+
+  const sum=(arr)=>arr.reduce((a,m)=>a+m.qty,0);
+  const countByType=(arr,type)=>arr.filter(m=>m.type===type).length;
+
+  // breakdown by product for last 30 days
+  const byProduct30={};
+  movs30.forEach(m=>{
+    byProduct30[m.productName]=(byProduct30[m.productName]||0)+m.qty;
+  });
+  const prodList30=Object.entries(byProduct30).sort((a,b)=>b[1]-a[1]);
+  const maxProd30=Math.max(...prodList30.map(([,v])=>v),1);
+
+  el.innerHTML=`
+    <div class="section-header">
+      <div class="section-title">Mi dashboard</div>
+      <span style="font-size:11px;color:var(--text3)">${new Date().toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'})}</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card" style="--accent-c:#0ea5e9"><div class="stat-label">${I.nav_movements} Últimos 7 días</div><div class="stat-value">${movs7.length}</div><div class="stat-sub">movimientos</div></div>
+      <div class="stat-card" style="--accent-c:#f59e0b"><div class="stat-label">${I.nav_register} Unidades (7d)</div><div class="stat-value">${sum(movs7)}</div><div class="stat-sub">retiradas / ingresadas</div></div>
+      <div class="stat-card" style="--accent-c:#10b981"><div class="stat-label">${I.nav_movements} Últimos 30 días</div><div class="stat-value">${movs30.length}</div><div class="stat-sub">movimientos</div></div>
+      <div class="stat-card" style="--accent-c:#8b5cf6"><div class="stat-label">${I.nav_register} Unidades (30d)</div><div class="stat-value">${sum(movs30)}</div><div class="stat-sub">retiradas / ingresadas</div></div>
+    </div>
+
+    <div class="section-header" style="margin-top:.25rem"><div class="section-title" style="font-size:13px">Mis productos retirados — últimos 30 días</div></div>
+    <div class="table-wrap" style="margin-bottom:1rem">
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Producto</th><th>Cantidad</th><th style="min-width:140px">Distribución</th></tr></thead>
+        <tbody>
+        ${prodList30.length?prodList30.map(([name,total])=>{
+          const pct=Math.round((total/maxProd30)*100);
+          return`<tr>
+            <td>${name}</td>
+            <td style="font-weight:600;color:var(--accent)">${total}</td>
+            <td><div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;min-width:100px">
+              <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px"></div>
+            </div></td>
+          </tr>`;
+        }).join(''):`<tr><td colspan="3" class="empty">${I.inbox}Sin movimientos en los últimos 30 días</td></tr>`}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="section-header"><div class="section-title" style="font-size:13px">Mis últimos movimientos</div></div>
+    <div class="table-wrap">
+      <div class="tbl-scroll"><table><thead><tr><th>Fecha</th><th>Código</th><th>Producto</th><th>Tipo</th><th>Cant.</th></tr></thead><tbody>
+      ${myMovs.slice(-8).reverse().map(m=>`<tr>
+        <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${m.code}</td>
+        <td>${m.productName}</td>
+        <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
+        <td style="font-weight:600">${m.qty}</td>
+      </tr>`).join('')||`<tr><td colspan="5" class="empty">${I.inbox}Sin movimientos registrados</td></tr>`}
+      </tbody></table></div>
+    </div>`;
+}
+
+// ── MOVEMENTS ─────────────────────────────────────────────────────
+let movFilter='all', movSearch='';
+function renderMovements(el){
+  const isAdmin=currentUser.role==='admin';
+  let movs=DB.movements.filter(m=>{
+    if(!isAdmin && m.userId!==currentUser.id) return false;
+    const ms=m.productName.toLowerCase().includes(movSearch.toLowerCase())||m.userName.toLowerCase().includes(movSearch.toLowerCase())||m.code.toLowerCase().includes(movSearch.toLowerCase());
+    const mf=movFilter==='all'||(movFilter==='in'&&m.type==='Entrada')||(movFilter==='out'&&m.type==='Salida');
+    return ms&&mf;
+  });
+  const cols=isAdmin?7:5;
+  el.innerHTML=`
+    <div class="section-header"><div class="section-title">${isAdmin?'Movimientos':'Mis movimientos'}</div></div>
+    <div class="chips">
+      <div class="chip ${movFilter==='all'?'active':''}" onclick="setMovFilter('all')">Todos</div>
+      <div class="chip ${movFilter==='in'?'active':''}" onclick="setMovFilter('in')">Entradas</div>
+      <div class="chip ${movFilter==='out'?'active':''}" onclick="setMovFilter('out')">Salidas</div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <div class="search-box">${I.search}<input type="text" placeholder="Buscar..." value="${movSearch}" oninput="movSearch=this.value;navigate('movements')"></div>
+      </div>
+      <div class="tbl-scroll"><table><thead><tr>
+        <th>Fecha</th><th>Código</th><th>Producto</th><th>Tipo</th><th>Cant.</th>${isAdmin?'<th>Usuario</th><th></th>':''}
+      </tr></thead><tbody>
+      ${movs.length?movs.map(m=>`<tr>
+        <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${m.code}</td>
+        <td>${m.productName}</td>
+        <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
+        <td style="font-weight:600">${m.qty}</td>
+        ${isAdmin?`<td style="white-space:nowrap">${m.userName}</td><td><div class="action-btns">
+          <button class="icon-btn" onclick="openMovementForm('${m.id}')" title="Editar">${I.edit}</button>
+          <button class="icon-btn del" onclick="deleteMovement('${m.id}')" title="Eliminar">${I.trash}</button>
+        </div></td>`:''}
+      </tr>`).join(''):`<tr><td colspan="${cols}" class="empty">${I.inbox}Sin resultados</td></tr>`}
+      </tbody></table></div>
+    </div>`;
+}
+function setMovFilter(f){movFilter=f; navigate('movements');}
+
+function openMovementForm(id){
+  const m=DB.movements.find(x=>x.id===id);
+  if(!m)return;
+  document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
+    <div class="panel">
+      <div class="panel-title">Editar movimiento <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
+      <div class="form-row"><label>Fecha</label><input type="date" id="fm-date" value="${m.date}"></div>
+      <div class="form-row"><label>Producto</label>
+        <select id="fm-prod">
+          ${DB.products.map(p=>`<option value="${p.id}" ${p.id===m.productId?'selected':''}>${p.name} (${p.code})</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row"><label>Tipo</label>
+        <select id="fm-type">
+          <option value="Entrada" ${m.type==='Entrada'?'selected':''}>Entrada</option>
+          <option value="Salida" ${m.type==='Salida'?'selected':''}>Salida</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Cantidad</label><input type="number" id="fm-qty" value="${m.qty}" min="1" inputmode="numeric"></div>
+      <div class="form-row"><label>Usuario</label>
+        <select id="fm-user">
+          ${DB.users.map(u=>`<option value="${u.id}" ${u.id===m.userId?'selected':''}>${u.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn-sm" onclick="closeOverlay()">Cancelar</button>
+        <button class="btn-sm accent" onclick="saveMovement('${id}')">${I.check} Guardar</button>
+      </div>
+    </div>
+  </div>`;
+}
+async function saveMovement(id){
+  const m=DB.movements.find(x=>x.id===id);
+  if(!m)return;
+  const date=document.getElementById('fm-date').value;
+  const prodId=document.getElementById('fm-prod').value;
+  const type=document.getElementById('fm-type').value;
+  const qty=parseInt(document.getElementById('fm-qty').value)||1;
+  const userId=document.getElementById('fm-user').value;
+  const u=DB.users.find(x=>x.id===userId);
+  const p=DB.products.find(x=>x.id===prodId);
+  if(!date||!p||qty<1){toast('Completá todos los campos','err');return;}
+  try{
+    // revert stock of old movement, apply new
+    const oldP=DB.products.find(x=>x.id===m.productId);
+    let oldNewStock=null;
+    if(oldP){
+      oldNewStock = m.type==='Entrada' ? oldP.stock-m.qty : oldP.stock+m.qty;
+      if(oldP.id===p.id){ /* same product, will be overwritten below */ }
+      else{ await sbUpdate('products', oldP.id, {stock: oldNewStock}); oldP.stock=oldNewStock; }
+    }
+    let pStockBase = (oldP && oldP.id===p.id) ? oldNewStock : p.stock;
+    const pNewStock = type==='Entrada' ? pStockBase+qty : pStockBase-qty;
+    await sbUpdate('products', p.id, {stock: pNewStock});
+    p.stock = pNewStock;
+
+    await sbUpdate('movements', id, {
+      date, product_id:p.id, product_name:p.name, product_code:p.code,
+      type, qty, user_id:userId, user_name:u?.name||m.userName
+    });
+    Object.assign(m,{date,productId:p.id,productName:p.name,code:p.code,type,qty,userId,userName:u?.name||m.userName});
+    closeOverlay(); toast('Movimiento actualizado'); navigate('movements');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+async function deleteMovement(id){
+  if(!confirm('¿Eliminar este movimiento?'))return;
+  const m=DB.movements.find(x=>x.id===id);
+  try{
+    if(m){
+      const p=DB.products.find(x=>x.id===m.productId);
+      if(p){
+        const ns = m.type==='Entrada' ? p.stock-m.qty : p.stock+m.qty;
+        await sbUpdate('products', p.id, {stock: ns});
+        p.stock = ns;
+      }
+    }
+    await sbDelete('movements', id);
+    DB.movements=DB.movements.filter(x=>x.id!==id);
+    toast('Movimiento eliminado'); navigate('movements');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+// ── REGISTRO ─────────────────────────────────────────────────────
+function renderRegister(el){
+  const isAdmin=currentUser.role==='admin';
+  const typeSection=isAdmin?`
+    <div class="reg-field">
+      <label>Tipo de movimiento</label>
+      <div class="type-toggle">
+        <div class="type-btn ${regType==='Entrada'?'active-in':''}" onclick="setRegType('Entrada')">↓ Entrada</div>
+        <div class="type-btn ${regType==='Salida'?'active-out':''}" onclick="setRegType('Salida')">↑ Salida</div>
+      </div>
+    </div>`
+  :`<div style="margin-bottom:1rem;padding:9px 12px;background:#f59e0b0e;border:1px solid #f59e0b30;border-radius:9px;font-size:12px;color:#fbbf24">↑ Solo podés registrar <strong>Salidas</strong></div>`;
+
+  el.innerHTML=`
+    <div class="section-header"><div class="section-title">Registrar movimiento</div></div>
+    <div class="reg-wrap">
+      <div class="reg-card">
+        ${typeSection}
+        <div class="reg-field">
+          <label>Código o nombre del producto</label>
+          <input type="text" id="regCode" placeholder="Ej: EPP-CSC-001 o Casco de seguridad" value="${regScanned}" oninput="onRegCodeInput(this.value)" autocomplete="off" autocapitalize="characters">
+          <div class="prod-hint" id="prodHint"></div>
+        </div>
+        <div class="reg-field">
+          <label>Descripción / Detalle</label>
+          <input type="text" id="regDesc" placeholder="Nota o referencia adicional..." autocomplete="off">
+        </div>
+        <div class="reg-field">
+          <label>Cantidad</label>
+          <input type="number" id="regQty" value="1" min="1" inputmode="numeric">
+        </div>
+        <button class="btn-sm accent" onclick="submitMovement()" style="width:100%;justify-content:center;padding:13px;font-size:14px">
+          ${I.check} Confirmar movimiento
+        </button>
+        <button class="qr-btn" onclick="openScanner()">
+          ${I.scan} Escanear QR / código de barras
+        </button>
+      </div>
+      <div>
+        <div class="reg-field" style="margin-bottom:8px">
+          <label>Buscar producto (código o nombre)</label>
+          <div class="search-box">${I.search}<input type="text" id="regProdSearch" placeholder="Buscar por código o nombre..." oninput="filterRegProdList(this.value)" autocomplete="off"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-weight:500;letter-spacing:.6px;text-transform:uppercase">Tocá un producto para cargarlo</div>
+        <div class="prod-list" id="regProdList">
+          ${renderRegProdList(DB.products)}
+        </div>
+      </div>
+    </div>`;
+  if(regScanned) setTimeout(()=>onRegCodeInput(regScanned),50);
+}
+function renderRegProdList(prods){
+  if(!prods.length) return `<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">${I.inbox}Sin resultados</div>`;
+  return prods.map(p=>`
+    <div class="prod-list-item" onclick="fillRegCode('${p.code}')">
+      <div>
+        <div style="font-size:13px;font-weight:500">${p.name}</div>
+        <div style="font-size:10px;font-family:monospace;color:var(--accent);margin-top:2px">${p.code}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:8px">
+        <span class="pill ${p.stock<p.minStock?'pill-low':'pill-ok'}">${p.stock} ${p.unit}</span>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">${p.category}</div>
+      </div>
+    </div>`).join('');
+}
+function filterRegProdList(q){
+  const term=q.trim().toLowerCase();
+  const rows=DB.products.filter(p=>p.code.toLowerCase().includes(term)||p.name.toLowerCase().includes(term));
+  const list=document.getElementById('regProdList');
+  if(list) list.innerHTML=renderRegProdList(rows);
+}
+function setRegType(t){regType=t; navigate('register');}
+function onRegCodeInput(val){
+  regScanned=val;
+  const hint=document.getElementById('prodHint');
+  if(!hint)return;
+  const term=val.trim().toLowerCase();
+  const p=DB.products.find(pr=>pr.code.toLowerCase()===term||pr.name.toLowerCase()===term);
+  if(p){
+    hint.className='prod-hint found';
+    hint.innerHTML=`✓ <strong>${p.name}</strong> · Stock: <strong>${p.stock} ${p.unit}</strong> <span class="pill" style="${catPillStyle(p.category)}">${p.category}</span>`;
+  }else if(val.length>2){
+    hint.className='prod-hint notfound';
+    hint.textContent='✗ Código no encontrado';
+  }else{
+    hint.className='prod-hint';
+    hint.textContent='';
+  }
+}
+function fillRegCode(code){
+  const ci=document.getElementById('regCode');
+  if(ci){ci.value=code; onRegCodeInput(code);}
+  regScanned=code;
+}
+async function submitMovement(){
+  const code=(document.getElementById('regCode')?.value||'').trim();
+  const qty=parseInt(document.getElementById('regQty')?.value)||1;
+  const desc=document.getElementById('regDesc')?.value||'';
+  const type=currentUser.role==='admin'?regType:'Salida';
+  const term=code.toLowerCase();
+  const p=DB.products.find(pr=>pr.code.toLowerCase()===term||pr.name.toLowerCase()===term);
+  if(!p){toast('Ingresá un código o nombre válido','err');return;}
+  if(qty<1){toast('Cantidad inválida','err');return;}
+  if(type==='Salida'&&p.stock<qty){toast(`Stock insuficiente (disponible: ${p.stock} ${p.unit})`,'err');return;}
+  try{
+    const newStock = type==='Entrada' ? p.stock+qty : p.stock-qty;
+    const body={
+      date:new Date().toISOString().slice(0,10), type,
+      product_id:p.id, product_name:p.name, product_code:p.code,
+      qty, user_id:currentUser.id, user_name:currentUser.name, description:desc
+    };
+    const [newMov] = await sbInsert('movements', body);
+    await sbUpdate('products', p.id, {stock:newStock});
+    p.stock = newStock;
+    DB.movements.unshift({...newMov, productId:newMov.product_id, productName:newMov.product_name, code:newMov.product_code, userId:newMov.user_id, userName:newMov.user_name});
+    regScanned='';
+    toast('Movimiento registrado');
+    navigate('movements');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+// ── SCANNER (native getUserMedia + ZXing) ─────────────────────────
+let scanStream=null, scanAnimFrame=null, scanCanvas=null, scanCtx=null;
+
+async function openScanner(){
+  const modal=document.getElementById('scannerModal');
+  modal.style.display='flex';
+  document.getElementById('scannerStatus').textContent='';
+  const video=document.getElementById('qrVideo');
+
+  // stop any previous stream
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop()); scanStream=null;}
+  if(scanAnimFrame){cancelAnimationFrame(scanAnimFrame); scanAnimFrame=null;}
+
+  try{
+    // prefer rear camera on mobile
+    const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
+    scanStream=await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject=scanStream;
+    video.onloadedmetadata=()=>{ video.play(); startZXing(video); };
+  }catch(err){
+    modal.style.display='none';
+    if(err.name==='NotAllowedError') toast('Permiso de cámara denegado','err');
+    else toast('No se pudo abrir la cámara','err');
+  }
+}
+
+function startZXing(video){
+  // try ZXing if available (loaded async below), else canvas fallback hint
+  if(typeof ZXing==='undefined'){
+    document.getElementById('scannerStatus').textContent='Ingresá el código manualmente si no detecta';
+    return;
+  }
+  try{
+    const reader=new ZXing.BrowserMultiFormatReader();
+    reader.decodeFromVideoElement(video,(result,err)=>{
+      if(result){
+        const code=result.getText();
+        closeScanner();
+        fillRegCode(code);
+        toast('Código escaneado: '+code);
+      }
+    });
+    // store to stop later
+    window._zxingReader=reader;
+  }catch(e){
+    document.getElementById('scannerStatus').textContent='Escáner activo';
+  }
+}
+
+function closeScanner(){
+  document.getElementById('scannerModal').style.display='none';
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop()); scanStream=null;}
+  if(window._zxingReader){try{window._zxingReader.reset();}catch(e){} window._zxingReader=null;}
+}
+
+// Load ZXing dynamically (doesn't block page load)
+(function(){
+  const s=document.createElement('script');
+  s.src='https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js';
+  s.async=true;
+  document.head.appendChild(s);
+})();
+
+// ── PRODUCTOS ─────────────────────────────────────────────────────
+let prodSortCol='code', prodSortDir='asc';
+function renderProducts(el){
+  el.innerHTML=`
+    <div class="section-header">
+      <div class="section-title">Productos</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" onclick="openCategoryManager()">${I.nav_products} Categorías</button>
+        <button class="btn-sm accent" onclick="openProductForm()">${I.plus} Nuevo</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <div class="search-box">${I.search}<input type="text" placeholder="Buscar..." oninput="filterProd(this.value,document.getElementById('catF')?.value||'')"></div>
+        <select class="select-filter" id="catF" onchange="filterProd(document.querySelector('#mainContent .search-box input')?.value||'',this.value)">
+          <option value="">Todas</option>
+          ${DB.categories.map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="tbl-scroll"><table><thead><tr>${prodHeaderCells()}</tr></thead>
+      <tbody id="prodTable">${renderProdRows(DB.products)}</tbody></table></div>
+    </div>`;
+}
+function prodHeaderCells(){
+  const cols=[
+    {key:'code',label:'Código'},
+    {key:'name',label:'Nombre'},
+    {key:'category',label:'Cat.'},
+    {key:'stock',label:'Stock'},
+    {key:'minStock',label:'Mín'},
+    {key:'estado',label:'Estado'},
+  ];
+  return cols.map(c=>{
+    const active=prodSortCol===c.key;
+    const arrow=active?(prodSortDir==='asc'?'↑':'↓'):'↕';
+    return `<th onclick="setProdSort('${c.key}')" style="cursor:pointer;user-select:none;white-space:nowrap" title="Ordenar por ${c.label}">${c.label} <span style="color:${active?'var(--accent)':'var(--text3)'};font-size:10px">${arrow}</span></th>`;
+  }).join('')+'<th></th>';
+}
+function setProdSort(col){
+  if(prodSortCol===col){
+    prodSortDir = prodSortDir==='asc' ? 'desc' : 'asc';
+  }else{
+    prodSortCol=col;
+    prodSortDir='asc';
+  }
+  // re-render header (for arrows) and re-apply current filter/search
+  const searchVal=document.querySelector('#mainContent .search-box input')?.value||'';
+  const catVal=document.getElementById('catF')?.value||'';
+  const theadRow=document.querySelector('#mainContent thead tr');
+  if(theadRow) theadRow.innerHTML=prodHeaderCells();
+  filterProd(searchVal,catVal);
+}
+function sortProducts(list){
+  const dir = prodSortDir==='asc' ? 1 : -1;
+  const col = prodSortCol;
+  return [...list].sort((a,b)=>{
+    let va,vb;
+    if(col==='estado'){
+      va = a.stock<a.minStock ? 0 : 1;
+      vb = b.stock<b.minStock ? 0 : 1;
+    }else{
+      va=a[col]; vb=b[col];
+    }
+    if(typeof va==='string'){
+      return va.localeCompare(vb,'es',{sensitivity:'base'})*dir;
+    }
+    return ((va||0)-(vb||0))*dir;
+  });
+}
+// category color helper (consistent palette by name)
+const CAT_COLORS={'EPP':'#0ea5e9','Ropa':'#8b5cf6','Materiales OyM':'#f59e0b','Herramientas':'#10b981','Material':'#8b5cf6'};
+const CAT_PALETTE=['#0ea5e9','#8b5cf6','#10b981','#f59e0b','#ec4899','#14b8a6','#f97316','#a78bfa'];
+function catColor(cat){
+  if(CAT_COLORS[cat]) return CAT_COLORS[cat];
+  // deterministic color from hash
+  let h=0; for(let i=0;i<cat.length;i++) h=(h*31+cat.charCodeAt(i))>>>0;
+  return CAT_PALETTE[h%CAT_PALETTE.length];
+}
+function catPillStyle(cat){
+  const c=catColor(cat);
+  return `background:${c}14;color:${c};border:1px solid ${c}30`;
+}
+function renderProdRows(prods){
+  if(!prods.length)return`<tr><td colspan="7" class="empty">${I.inbox}Sin productos</td></tr>`;
+  const sorted=sortProducts(prods);
+  return sorted.map(p=>`<tr>
+    <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${p.code}</td>
+    <td>${p.name}</td>
+    <td><span class="pill" style="${catPillStyle(p.category)}">${p.category}</span></td>
+    <td style="font-weight:600;white-space:nowrap">${p.stock} <span style="color:var(--text3);font-weight:400;font-size:11px">${p.unit}</span></td>
+    <td style="color:var(--text3)">${p.minStock}</td>
+    <td><span class="pill ${p.stock<p.minStock?'pill-low':'pill-ok'}">${p.stock<p.minStock?'Bajo':'OK'}</span></td>
+    <td><div class="action-btns">
+      <button class="icon-btn" onclick="openProductForm('${p.id}')" title="Editar">${I.edit}</button>
+      <button class="icon-btn del" onclick="deleteProduct('${p.id}')" title="Eliminar">${I.trash}</button>
+    </div></td>
+  </tr>`).join('');
+}
+function filterProd(s,cat){
+  const rows=DB.products.filter(p=>(p.name.toLowerCase().includes(s.toLowerCase())||p.code.toLowerCase().includes(s.toLowerCase()))&&(!cat||p.category===cat));
+  const tb=document.getElementById('prodTable');
+  if(tb)tb.innerHTML=renderProdRows(rows);
+}
+function openProductForm(id){
+  const p=id?DB.products.find(pr=>pr.id===id):null;
+  document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
+    <div class="panel">
+      <div class="panel-title">${p?'Editar':'Nuevo'} producto <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Código</label><input id="fp-code" placeholder="MAT-XXX-001" value="${p?p.code:''}"></div>
+        <div class="form-row"><label>Categoría</label>
+          <select id="fp-cat" onchange="onCatSelectChange(this)">
+            ${DB.categories.map(c=>`<option value="${c}" ${p?.category===c?'selected':''}>${c}</option>`).join('')}
+            ${(p&&!DB.categories.includes(p.category))?`<option value="${p.category}" selected>${p.category}</option>`:''}
+            <option value="__new__">+ Agregar nueva categoría...</option>
+          </select>
+          <input type="text" id="fp-cat-new" placeholder="Nombre de la nueva categoría" style="margin-top:8px;display:none">
+        </div>
+      </div>
+      <div class="form-row"><label>Nombre del producto</label><input id="fp-name" placeholder="Nombre" value="${p?p.name:''}"></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Stock</label><input type="number" id="fp-stock" value="${p?p.stock:0}" min="0"></div>
+        <div class="form-row"><label>Stock mínimo</label><input type="number" id="fp-min" value="${p?p.minStock:5}" min="0"></div>
+        <div class="form-row"><label>Unidad</label><input id="fp-unit" placeholder="u / caja / m" value="${p?p.unit:'u'}"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-sm" onclick="closeOverlay()">Cancelar</button>
+        <button class="btn-sm accent" onclick="saveProduct('${id||''}')">${I.check} Guardar</button>
+      </div>
+    </div>
+  </div>`;
+}
+function onCatSelectChange(sel){
+  const newInput=document.getElementById('fp-cat-new');
+  if(sel.value==='__new__'){
+    newInput.style.display='block';
+    newInput.focus();
+  }else{
+    newInput.style.display='none';
+  }
+}
+async function saveProduct(id){
+  const code=document.getElementById('fp-code').value.trim();
+  const name=document.getElementById('fp-name').value.trim();
+  let cat=document.getElementById('fp-cat').value;
+  const stock=parseInt(document.getElementById('fp-stock').value)||0;
+  const minStock=parseInt(document.getElementById('fp-min').value)||5;
+  const unit=document.getElementById('fp-unit').value.trim()||'u';
+  if(cat==='__new__'){
+    cat=document.getElementById('fp-cat-new').value.trim();
+    if(!cat){toast('Ingresá el nombre de la nueva categoría','err');return;}
+    if(!DB.categories.includes(cat)){
+      try{ const [res]=await sbInsert('categories',{name:cat}); DB.categories.push(cat); DB.categoryIds[cat]=res.id; }
+      catch(e){ toast('Error al crear categoría: '+e.message,'err'); return; }
+    }
+  }
+  if(!code||!name){toast('Completá los campos requeridos','err');return;}
+  // check for duplicate code (only when creating new, or when editing and code changed)
+  const dup=DB.products.find(pr=>pr.code.toLowerCase()===code.toLowerCase()&&pr.id!==id);
+  if(dup){toast(`Ya existe un producto con ese código: "${dup.name}"`,'err');return;}
+  try{
+    const body={code,name,category:cat,stock,min_stock:minStock,unit};
+    if(id){
+      await sbUpdate('products',id,body);
+      const p=DB.products.find(pr=>pr.id===id);
+      if(p)Object.assign(p,{code,name,category:cat,stock,minStock,unit});
+    }else{
+      const [res]=await sbInsert('products',body);
+      DB.products.push({...res, minStock:res.min_stock});
+    }
+    closeOverlay(); toast(id?'Producto actualizado':'Producto creado'); navigate('products');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+async function deleteProduct(id){
+  if(!confirm('¿Eliminar este producto?'))return;
+  try{
+    await sbDelete('products',id);
+    DB.products=DB.products.filter(p=>p.id!==id);
+    toast('Producto eliminado'); navigate('products');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+// ── CATEGORY MANAGER ────────────────────────────────────────────
+function openCategoryManager(){
+  document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
+    <div class="panel">
+      <div class="panel-title">Categorías <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
+      <div id="catManagerList"></div>
+      <div class="form-row" style="margin-top:14px">
+        <label>Nueva categoría</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="newCatInput" placeholder="Nombre de categoría" style="flex:1">
+          <button class="btn-sm accent" onclick="addCategory()">${I.plus} Agregar</button>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-sm accent" onclick="closeOverlay();navigate('products')">${I.check} Listo</button>
+      </div>
+    </div>
+  </div>`;
+  renderCategoryManagerList();
+}
+function renderCategoryManagerList(){
+  const list=document.getElementById('catManagerList');
+  if(!list)return;
+  list.innerHTML=DB.categories.map((c,i)=>{
+    const count=DB.products.filter(p=>p.category===c).length;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span class="pill" style="${catPillStyle(c)};flex-shrink:0">${c}</span>
+      <input type="text" value="${c}" id="catEdit${i}" style="flex:1;background:var(--navy);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px;outline:none">
+      <span style="font-size:11px;color:var(--text3);white-space:nowrap">${count} prod.</span>
+      <button class="icon-btn" title="Guardar" onclick="renameCategory(${i})">${I.check}</button>
+      <button class="icon-btn del" title="Eliminar" onclick="removeCategory(${i})">${I.trash}</button>
+    </div>`;
+  }).join('');
+}
+function renameCategory(i){
+  const oldName=DB.categories[i];
+  const newName=document.getElementById('catEdit'+i).value.trim();
+  if(!newName){toast('El nombre no puede estar vacío','err');return;}
+  if(newName===oldName)return;
+  if(DB.categories.includes(newName)){toast('Ya existe una categoría con ese nombre','err');return;}
+  const catId = DB.categoryIds[oldName];
+  (async()=>{
+    try{
+      if(catId) await sbUpdate('categories', catId, {name:newName});
+      // reassign products using this category
+      const prods = DB.products.filter(p=>p.category===oldName);
+      for(const p of prods){ await sbUpdate('products', p.id, {category:newName}); p.category=newName; }
+      DB.categories[i]=newName;
+      delete DB.categoryIds[oldName];
+      DB.categoryIds[newName]=catId;
+      toast('Categoría actualizada'); renderCategoryManagerList();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+  })();
+}
+function removeCategory(i){
+  const name=DB.categories[i];
+  const count=DB.products.filter(p=>p.category===name).length;
+  if(count>0){toast(`No se puede eliminar: ${count} producto(s) usan esta categoría`,'err');return;}
+  if(!confirm(`¿Eliminar la categoría "${name}"?`))return;
+  const catId = DB.categoryIds[name];
+  (async()=>{
+    try{
+      if(catId) await sbDelete('categories', catId);
+      DB.categories.splice(i,1);
+      delete DB.categoryIds[name];
+      toast('Categoría eliminada'); renderCategoryManagerList();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+  })();
+}
+function addCategory(){
+  const input=document.getElementById('newCatInput');
+  const name=input.value.trim();
+  if(!name){toast('Ingresá un nombre','err');return;}
+  if(DB.categories.includes(name)){toast('Ya existe esa categoría','err');return;}
+  (async()=>{
+    try{
+      const [res]=await sbInsert('categories',{name});
+      DB.categories.push(name);
+      DB.categoryIds[name]=res.id;
+      input.value=''; toast('Categoría agregada'); renderCategoryManagerList();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+  })();
+}
+
+// ── USUARIOS ──────────────────────────────────────────────────────
+function renderUsers(el){
+  el.innerHTML=`
+    <div class="section-header">
+      <div class="section-title">Usuarios</div>
+      <button class="btn-sm accent" onclick="openUserForm()">${I.plus} Nuevo</button>
+    </div>
+    <div class="table-wrap">
+      <div class="tbl-scroll"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Movimientos</th><th></th></tr></thead><tbody>
+      ${DB.users.map(u=>{
+        const count=DB.movements.filter(m=>m.userId===u.id).length;
+        return`<tr>
+          <td><div style="display:flex;align-items:center;gap:9px">
+            <div class="user-row-avatar" style="background:${u.color}22;color:${u.color}">${u.initials}</div>
+            <span>${u.name}</span>
+          </div></td>
+          <td><span class="role-badge ${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'Admin':'Usuario'}</span></td>
+          <td style="color:var(--text2)">${count}</td>
+          <td><div class="action-btns">
+            <button class="icon-btn" onclick="openUserForm('${u.id}')" title="Editar">${I.edit}</button>
+            ${u.id!==currentUser.id?`<button class="icon-btn del" onclick="deleteUser('${u.id}')" title="Eliminar">${I.trash}</button>`:''}
+          </div></td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+function openUserForm(id){
+  const u=id?DB.users.find(x=>x.id===id):null;
+  const colors=['#0ea5e9','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316'];
+  const selColor=u?.color||colors[0];
+  document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
+    <div class="panel">
+      <div class="panel-title">${u?'Editar':'Nuevo'} usuario <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
+      <div class="form-row"><label>Nombre completo</label><input id="fu-name" placeholder="Nombre Apellido" value="${u?u.name:''}"></div>
+      <div class="form-row"><label>Iniciales (2 letras)</label><input id="fu-ini" placeholder="AB" maxlength="2" value="${u?u.initials:''}" style="text-transform:uppercase"></div>
+      <div class="form-row"><label>Rol</label>
+        <select id="fu-role">
+          <option value="user" ${u?.role==='user'?'selected':''}>Usuario operador</option>
+          <option value="admin" ${u?.role==='admin'?'selected':''}>Administrador</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Contraseña</label>
+        <div style="display:flex;gap:8px">
+          <input type="password" id="fu-pwd" placeholder="Contraseña de acceso" value="${u?u.password:'1234'}" style="flex:1;font-family:monospace" maxlength="20">
+          <button class="icon-btn" type="button" title="Mostrar/ocultar" onclick="toggleUserPwdVisibility()">${I.search}</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:5px">El usuario la usará para iniciar sesión. Podés cambiarla cuando quieras.</div>
+      </div>
+      <div class="form-row"><label>Color de avatar</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="colorPicker">
+          ${colors.map(c=>`<div onclick="selectColor('${c}')" data-color="${c}" style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${selColor===c?'#fff':'transparent'};transition:border .12s"></div>`).join('')}
+        </div>
+        <input type="hidden" id="fu-color" value="${selColor}">
+      </div>
+      <div class="form-actions">
+        <button class="btn-sm" onclick="closeOverlay()">Cancelar</button>
+        <button class="btn-sm accent" onclick="saveUser('${id||''}')">${I.check} Guardar</button>
+      </div>
+    </div>
+  </div>`;
+}
+function toggleUserPwdVisibility(){
+  const f=document.getElementById('fu-pwd');
+  f.type=f.type==='password'?'text':'password';
+}
+function selectColor(c){
+  document.getElementById('fu-color').value=c;
+  document.querySelectorAll('#colorPicker div[data-color]').forEach(d=>{d.style.border=d.dataset.color===c?'3px solid #fff':'3px solid transparent';});
+}
+async function saveUser(id){
+  const name=document.getElementById('fu-name').value.trim();
+  const initials=document.getElementById('fu-ini').value.trim().toUpperCase();
+  const role=document.getElementById('fu-role').value;
+  const color=document.getElementById('fu-color').value;
+  const password=document.getElementById('fu-pwd').value.trim()||'1234';
+  if(!name||!initials){toast('Completá nombre e iniciales','err');return;}
+  try{
+    const body={name,initials,role,color,password};
+    if(id){
+      await sbUpdate('app_users', id, body);
+      const u=DB.users.find(x=>x.id===id);
+      if(u)Object.assign(u,body);
+      toast('Usuario actualizado');
+    }else{
+      const [res]=await sbInsert('app_users', body);
+      DB.users.push(res);
+      toast('Usuario creado');
+    }
+    closeOverlay(); navigate('users');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+async function deleteUser(id){
+  if(!confirm('¿Eliminar este usuario?'))return;
+  try{
+    await sbDelete('app_users', id);
+    DB.users=DB.users.filter(u=>u.id!==id);
+    toast('Usuario eliminado'); navigate('users');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────
+function renderExport(el){
+  el.innerHTML=`
+    <div class="section-header"><div class="section-title">Exportar datos</div></div>
+    <div class="export-grid">
+      <div class="table-wrap" style="padding:18px">
+        <div style="margin-bottom:10px;color:var(--success);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500">${I.download} Movimientos</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Código · Producto · Fecha · Tipo · Usuario</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn-sm success" onclick="exportCSV('movements')">${I.download} CSV</button>
+          <button class="btn-sm" onclick="exportCSV('movements_json')">JSON</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="padding:18px">
+        <div style="margin-bottom:10px;color:var(--accent);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500">${I.nav_products} Inventario</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Código · Nombre · Categoría · Stock</div>
+        <button class="btn-sm success" onclick="exportCSV('products')">${I.download} CSV</button>
+      </div>
+    </div>
+    <div class="section-header"><div class="section-title" style="font-size:13px">Vista previa movimientos</div></div>
+    <div class="table-wrap"><div class="tbl-scroll"><table><thead><tr><th>Código</th><th>Producto</th><th>Fecha</th><th>Tipo</th><th>Cant.</th><th>Usuario</th></tr></thead><tbody>
+    ${DB.movements.slice(-10).reverse().map(m=>`<tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${m.code}</td>
+      <td>${m.productName}</td>
+      <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
+      <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
+      <td>${m.qty}</td>
+      <td style="white-space:nowrap">${m.userName}</td>
+    </tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+function exportCSV(type){
+  let csv='',filename='';
+  if(type==='movements'){
+    csv='Codigo,Producto,Fecha,Tipo,Cantidad,Usuario\n'+DB.movements.map(m=>`${m.code},${m.productName},${m.date},${m.type},${m.qty},${m.userName}`).join('\n');
+    filename='movimientos_stock.csv';
+  }else if(type==='products'){
+    csv='Codigo,Nombre,Categoria,Stock,Unidad,StockMinimo\n'+DB.products.map(p=>`${p.code},${p.name},${p.category},${p.stock},${p.unit},${p.minStock}`).join('\n');
+    filename='inventario_productos.csv';
+  }else if(type==='movements_json'){
+    const blob=new Blob([JSON.stringify(DB.movements,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='movimientos.json';a.click();
+    toast('JSON exportado');return;
+  }
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  toast('CSV exportado');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+loadAll();
+</script>
+</body>
+</html>
