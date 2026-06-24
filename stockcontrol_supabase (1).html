@@ -180,16 +180,27 @@ tr:hover td{background:#ffffff04}
   .dashboard-grid{grid-template-columns:1fr!important}
   table{min-width:360px}
 }
+/* Product photos */
+.prod-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
+.prod-thumb-ph{width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text3)}
+.prod-thumb-ph svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.photo-drop{border:2px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;position:relative;margin-top:4px}
+.photo-drop:hover{border-color:var(--accent);background:#0ea5e908}
+.photo-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-preview-img{width:100%;max-height:150px;object-fit:contain;border-radius:8px;margin-top:8px;border:1px solid var(--border)}
+.reg-prod-img{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
+.reg-prod-img-ph{width:44px;height:44px;border-radius:8px;border:1px solid var(--border);background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text3)}
+.reg-prod-img-ph svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
 <div class="app" id="app">
 
-<div class="loading-screen" id="loadingScreen" style="position:fixed;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px">
+<div id="loadingScreen" style="position:fixed;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px">
+  <style>@keyframes spcSpin{to{transform:rotate(360deg)}}</style>
   <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spcSpin .7s linear infinite"></div>
   <p style="font-size:13px;color:var(--text2)">Conectando con la base de datos...</p>
 </div>
-<style>@keyframes spcSpin{to{transform:rotate(360deg)}}</style>
 
 <div class="login-screen" id="loginScreen" style="display:none">
   <div class="login-box">
@@ -269,72 +280,54 @@ const I = {
   nav_products:`<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
   nav_users:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
   nav_export:`<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  upload:`<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  image:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
 };
 
-// ── SUPABASE CONFIG ──────────────────────────────────────────────
-const SUPA_URL = 'https://srjnxgvdlcqmkxnnbclq.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyam54Z3ZkbGNxbWt4bm5iY2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDQ5NjQsImV4cCI6MjA5NzM4MDk2NH0.OSyfMQ5s639BQXdEGfUqDMn9ZCubuiRpXt3utyux9P4';
-const H = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
-async function sbGet(table, params=''){
-  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, { headers: H });
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function sbInsert(table, body){
-  const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, { method:'POST', headers: H, body: JSON.stringify(body) });
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function sbUpdate(table, id, body){
-  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, { method:'PATCH', headers: H, body: JSON.stringify(body) });
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function sbDelete(table, id){
-  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: H });
-  if(!r.ok) throw new Error(await r.text());
-}
+// ── SUPABASE ─────────────────────────────────────────────────────
+const SB_URL='https://srjnxgvdlcqmkxnnbclq.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyam54Z3ZkbGNxbWt4bm5iY2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDQ5NjQsImV4cCI6MjA5NzM4MDk2NH0.OSyfMQ5s639BQXdEGfUqDMn9ZCubuiRpXt3utyux9P4';
+const SBH={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+async function sbGet(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:SBH});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbPost(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:SBH,body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbPatch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:SBH,body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbDel(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:SBH});if(!r.ok)throw new Error(await r.text());}
 
-// ── DATA (loaded from Supabase into memory) ──────────────────────
-let DB = { users:[], products:[], movements:[], categories:[], categoryIds:{} };
+let DB={users:[],products:[],movements:[],categories:[],catIds:{}};
+let currentUser=null,currentView='dashboard',regType='Salida',regScanned='';
 
 async function loadAll(){
   try{
-    const [users, products, movements, categories] = await Promise.all([
+    const[users,products,movements,categories]=await Promise.all([
       sbGet('app_users','order=name'),
       sbGet('products','order=code'),
       sbGet('movements','order=date.desc,created_at.desc'),
       sbGet('categories','order=name'),
     ]);
-    DB.users = users.map(u=>({...u}));
-    DB.products = products.map(p=>({...p, minStock:p.min_stock}));
-    DB.movements = movements.map(m=>({...m, productId:m.product_id, productName:m.product_name, code:m.product_code, userId:m.user_id, userName:m.user_name}));
-    DB.categories = categories.map(c=>c.name);
-    DB.categoryIds = {};
-    categories.forEach(c=>{ DB.categoryIds[c.name]=c.id; });
+    DB.users=users;
+    DB.products=products.map(p=>({...p,minStock:p.min_stock}));
+    DB.movements=movements.map(m=>({...m,productId:m.product_id,productName:m.product_name,code:m.product_code,userId:m.user_id,userName:m.user_name}));
+    DB.categories=categories.map(c=>c.name);
+    DB.catIds={};categories.forEach(c=>{DB.catIds[c.name]=c.id;});
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('loginScreen').style.display='flex';
     renderLogin();
   }catch(e){
-    document.getElementById('loadingScreen').innerHTML=`<div style="text-align:center;padding:2rem;color:#f87171;max-width:340px"><p style="font-size:15px;font-weight:500;margin-bottom:8px">Error al conectar</p><p style="font-size:13px;color:var(--text2);margin-bottom:16px;word-break:break-word">${e.message}</p><button onclick="location.reload()" class="btn-primary" style="width:auto;padding:10px 24px">Reintentar</button></div>`;
+    document.getElementById('loadingScreen').innerHTML=`<div style="text-align:center;padding:2rem;color:#f87171;max-width:320px">
+      <p style="font-size:15px;font-weight:500;margin-bottom:8px">Error de conexión</p>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;word-break:break-word">${e.message}</p>
+      <button onclick="location.reload()" class="btn-primary" style="width:auto;padding:10px 24px">Reintentar</button></div>`;
   }
 }
 
-// ── STATE ────────────────────────────────────────────────────────
-let currentUser=null, currentView='dashboard';
-let regType='Salida', regScanned='';
-
-// ── TOAST ─────────────────────────────────────────────────────────
-function toast(msg, type='ok'){
-  const t=document.createElement('div');
-  t.className='toast '+type;
+function toast(msg,type='ok'){
+  const t=document.createElement('div');t.className='toast '+type;
   t.innerHTML=(type==='ok'?I.check:I.alert)+msg;
   document.getElementById('toastContainer').appendChild(t);
   setTimeout(()=>t.remove(),3000);
 }
-function closeOverlay(){document.getElementById('overlayContainer').innerHTML='';}
-
+function closeOverlay(){document.getElementById('overlayContainer').innerHTML='';pendingPhotoFile=null;}
 // ── LOGIN ─────────────────────────────────────────────────────────
 function renderLogin(){
   document.getElementById('userGrid').innerHTML=DB.users.map(u=>`
@@ -351,22 +344,17 @@ function selectUser(id){
   document.getElementById('loginBtn').disabled=false;
   document.getElementById('pwdRow').style.display='block';
   document.getElementById('loginError').style.display='none';
-  const pwd=document.getElementById('loginPwd');
-  pwd.value='';
-  setTimeout(()=>pwd.focus(),50);
+  const pwd=document.getElementById('loginPwd');pwd.value='';setTimeout(()=>pwd.focus(),50);
 }
 function doLogin(){
   if(!currentUser)return;
-  const pwd=document.getElementById('loginPwd').value;
-  if(pwd!==currentUser.password){
-    document.getElementById('loginError').style.display='block';
-    return;
+  if(document.getElementById('loginPwd').value!==currentUser.password){
+    document.getElementById('loginError').style.display='block';return;
   }
   document.getElementById('loginScreen').style.display='none';
-  const ma=document.getElementById('mainApp');
-  ma.style.display='flex';
+  document.getElementById('mainApp').style.display='flex';
   document.getElementById('topbarUser').textContent=currentUser.name+(currentUser.role==='admin'?' · Admin':'');
-  renderSidebar(); renderMobileNav(); navigate('dashboard');
+  renderSidebar();renderMobileNav();navigate('dashboard');
 }
 function logout(){
   currentUser=null;
@@ -375,18 +363,18 @@ function logout(){
   document.querySelectorAll('.user-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('loginBtn').disabled=true;
   document.getElementById('pwdRow').style.display='none';
-  currentView='dashboard'; regScanned=''; regType='Salida';
+  currentView='dashboard';regScanned='';regType='Salida';
   renderLogin();
 }
 
 // ── NAV ───────────────────────────────────────────────────────────
 function navItems(){
-  const isAdmin=currentUser.role==='admin';
-  return [
+  const a=currentUser.role==='admin';
+  return[
     {id:'dashboard',icon:I.nav_dashboard,label:'Dashboard'},
     {id:'movements',icon:I.nav_movements,label:'Movimientos'},
     {id:'register',icon:I.nav_register,label:'Registrar'},
-    ...(isAdmin?[
+    ...(a?[
       {id:'products',icon:I.nav_products,label:'Productos'},
       {id:'users',icon:I.nav_users,label:'Usuarios'},
       {id:'export',icon:I.nav_export,label:'Exportar'},
@@ -394,10 +382,9 @@ function navItems(){
   ];
 }
 function renderSidebar(){
-  const isAdmin=currentUser.role==='admin';
-  let html='';
+  const a=currentUser.role==='admin';let html='';
   navItems().forEach(item=>{
-    if(isAdmin&&item.id==='products') html+=`<div class="nav-section">Admin</div>`;
+    if(a&&item.id==='products')html+=`<div class="nav-section">Admin</div>`;
     html+=`<div class="nav-item ${currentView===item.id?'active':''}" onclick="navigate('${item.id}')">${item.icon}<span>${item.label}</span></div>`;
   });
   document.getElementById('sidebar').innerHTML=html;
@@ -408,11 +395,10 @@ function renderMobileNav(){
   }</div>`;
 }
 function navigate(view){
-  const isAdmin=currentUser.role==='admin';
   const restricted=['products','users','export'];
-  if(!isAdmin && restricted.includes(view)) view='dashboard';
-  currentView=view; renderSidebar(); renderMobileNav();
-  const mc=document.getElementById('mainContent'); mc.scrollTop=0;
+  if(currentUser.role!=='admin'&&restricted.includes(view))view='dashboard';
+  currentView=view;renderSidebar();renderMobileNav();
+  const mc=document.getElementById('mainContent');mc.scrollTop=0;
   if(view==='dashboard')renderDashboard(mc);
   else if(view==='movements')renderMovements(mc);
   else if(view==='register')renderRegister(mc);
@@ -421,40 +407,29 @@ function navigate(view){
   else if(view==='export')renderExport(mc);
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────
+// ── DASHBOARD ADMIN ──────────────────────────────────────────────
 function renderDashboard(el){
-  if(currentUser.role!=='admin'){ renderUserDashboard(el); return; }
-
+  if(currentUser.role!=='admin'){renderUserDashboard(el);return;}
   const lowStock=DB.products.filter(p=>p.stock<p.minStock).length;
   const totalEPP=DB.products.filter(p=>p.category==='EPP').reduce((a,p)=>a+p.stock,0);
-  const today=new Date().toISOString().slice(0,10);
-  const todayMovs=DB.movements.filter(m=>m.date===today).length;
-
-  // EPP retirado por usuario (salidas de productos EPP)
-  const eppMovs=DB.movements.filter(m=>m.type==='Salida'&&DB.products.find(p=>p.id===m.productId&&p.category==='EPP'));
+  const td=new Date().toISOString().slice(0,10);
+  const todayMovs=DB.movements.filter(m=>m.date===td).length;
   const eppByUser={};
-  eppMovs.forEach(m=>{
-    if(!eppByUser[m.userId]) eppByUser[m.userId]={name:m.userName,total:0,items:{}};
+  DB.movements.filter(m=>m.type==='Salida'&&DB.products.find(p=>p.id===m.productId&&p.category==='EPP')).forEach(m=>{
+    if(!eppByUser[m.userId])eppByUser[m.userId]={name:m.userName,total:0,items:{}};
     eppByUser[m.userId].total+=m.qty;
     eppByUser[m.userId].items[m.productName]=(eppByUser[m.userId].items[m.productName]||0)+m.qty;
   });
-  // also include users with 0 EPP from nomina
-  DB.users.forEach(u=>{
-    if(!eppByUser[u.id]) eppByUser[u.id]={name:u.name,total:0,items:{}};
-  });
+  DB.users.forEach(u=>{if(!eppByUser[u.id])eppByUser[u.id]={name:u.name,total:0,items:{}};});
   const eppList=Object.entries(eppByUser).sort((a,b)=>b[1].total-a[1].total);
   const maxEPP=Math.max(...eppList.map(([,v])=>v.total),1);
-
-  // Ranking de categorías por consumo (salidas totales)
-  const catConsumption={};
+  const catC={};
   DB.movements.filter(m=>m.type==='Salida').forEach(m=>{
     const p=DB.products.find(pr=>pr.id===m.productId);
-    const cat=p?p.category:'Sin categoría';
-    catConsumption[cat]=(catConsumption[cat]||0)+m.qty;
+    const cat=p?p.category:'Sin categoría';catC[cat]=(catC[cat]||0)+m.qty;
   });
-  const catRanking=Object.entries(catConsumption).sort((a,b)=>b[1]-a[1]);
-  const maxCat=Math.max(...catRanking.map(([,v])=>v),1);
-
+  const catRank=Object.entries(catC).sort((a,b)=>b[1]-a[1]);
+  const maxCat=Math.max(...catRank.map(([,v])=>v),1);
   el.innerHTML=`
     <div class="section-header">
       <div class="section-title">Dashboard</div>
@@ -463,63 +438,36 @@ function renderDashboard(el){
     <div class="stats-grid">
       <div class="stat-card" style="--accent-c:#0ea5e9"><div class="stat-label">${I.nav_products} Productos</div><div class="stat-value">${DB.products.length}</div><div class="stat-sub">en catálogo</div></div>
       <div class="stat-card" style="--accent-c:#ef4444"><div class="stat-label" style="color:#f87171">${I.alert} Stock bajo</div><div class="stat-value" style="color:#f87171">${lowStock}</div><div class="stat-sub">bajo mínimo</div></div>
-      <div class="stat-card" style="--accent-c:#10b981"><div class="stat-label" style="color:#34d399">${I.nav_products} EPP</div><div class="stat-value" style="color:#34d399">${totalEPP}</div><div class="stat-sub">unidades EPP</div></div>
+      <div class="stat-card" style="--accent-c:#10b981"><div class="stat-label" style="color:#34d399">${I.nav_products} EPP total</div><div class="stat-value" style="color:#34d399">${totalEPP}</div><div class="stat-sub">unidades</div></div>
       <div class="stat-card" style="--accent-c:#f59e0b"><div class="stat-label">${I.nav_movements} Hoy</div><div class="stat-value">${todayMovs}</div><div class="stat-sub">movimientos</div></div>
     </div>
-
-    <!-- Ranking de categorías por consumo -->
-    <div class="section-header" style="margin-top:.25rem"><div class="section-title" style="font-size:13px">Ranking de categorías — mayor consumo (salidas)</div></div>
-    <div class="table-wrap" style="margin-bottom:1rem">
-      <div class="tbl-scroll"><table>
-        <thead><tr><th style="width:36px">#</th><th>Categoría</th><th>Total retirado</th><th style="min-width:160px">Distribución</th></tr></thead>
-        <tbody>
-        ${catRanking.length?catRanking.map(([cat,total],i)=>{
-          const color=catColor(cat);
-          const pct=Math.round((total/maxCat)*100);
-          return`<tr>
-            <td style="color:var(--text3);font-weight:600">${i+1}</td>
-            <td><span class="pill" style="${catPillStyle(cat)}">${cat}</span></td>
-            <td><span style="font-size:16px;font-weight:600;color:${color}">${total}</span> <span style="font-size:11px;color:var(--text3)">u.</span></td>
-            <td>
-              <div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;min-width:100px">
-                <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .3s"></div>
-              </div>
-            </td>
-          </tr>`;
-        }).join(''):`<tr><td colspan="4" class="empty">${I.inbox}Sin movimientos de salida registrados</td></tr>`}
-        </tbody>
-      </table></div>
-    </div>
-
-    <!-- EPP por usuario -->
-    <div class="section-header" style="margin-top:.25rem"><div class="section-title" style="font-size:13px">EPP retirado por usuario — histórico</div></div>
-    <div class="table-wrap" style="margin-bottom:1rem">
-      <div class="tbl-scroll"><table>
-        <thead><tr><th>Usuario</th><th>Total retirado</th><th style="min-width:160px">Distribución</th><th>Detalle por EPP</th></tr></thead>
-        <tbody>
-        ${eppList.map(([uid,data])=>{
-          const u=DB.users.find(x=>x.id==uid);
-          const color=u?.color||'#64748b';
-          const pct=maxEPP>0?Math.round((data.total/maxEPP)*100):0;
-          const detalle=Object.entries(data.items).map(([k,v])=>`<span style="display:inline-block;background:${color}18;border:1px solid ${color}30;color:${color};border-radius:12px;padding:1px 7px;font-size:10px;margin:1px 2px">${k}: ${v}</span>`).join('');
-          return`<tr>
-            <td><div style="display:flex;align-items:center;gap:8px">
-              <div style="width:28px;height:28px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${u?.initials||'?'}</div>
-              <span style="font-size:13px">${data.name}</span>
-            </div></td>
-            <td><span style="font-size:16px;font-weight:600;color:${data.total>0?color:'var(--text3)'}">${data.total}</span> <span style="font-size:11px;color:var(--text3)">u.</span></td>
-            <td>
-              <div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;min-width:100px">
-                <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .3s"></div>
-              </div>
-            </td>
-            <td>${detalle||'<span style="color:var(--text3);font-size:11px">Sin retiros</span>'}</td>
-          </tr>`;
-        }).join('')}
-        </tbody>
-      </table></div>
-    </div>
-
+    <div class="section-header"><div class="section-title" style="font-size:13px">Ranking categorías — consumo</div></div>
+    <div class="table-wrap" style="margin-bottom:1rem"><div class="tbl-scroll"><table>
+      <thead><tr><th>#</th><th>Categoría</th><th>Total</th><th style="min-width:140px">Barra</th></tr></thead><tbody>
+      ${catRank.length?catRank.map(([cat,total],i)=>{const c=catColor(cat),pct=Math.round((total/maxCat)*100);
+        return`<tr><td style="color:var(--text3);font-weight:600">${i+1}</td>
+          <td><span class="pill" style="${catPillStyle(cat)}">${cat}</span></td>
+          <td><span style="font-size:15px;font-weight:600;color:${c}">${total}</span> <span style="font-size:11px;color:var(--text3)">u.</span></td>
+          <td><div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${c};border-radius:4px"></div></div></td></tr>`;
+      }).join(''):`<tr><td colspan="4" class="empty">${I.inbox}Sin salidas registradas</td></tr>`}
+      </tbody></table></div></div>
+    <div class="section-header"><div class="section-title" style="font-size:13px">EPP retirado por usuario</div></div>
+    <div class="table-wrap" style="margin-bottom:1rem"><div class="tbl-scroll"><table>
+      <thead><tr><th>Usuario</th><th>Total</th><th style="min-width:120px">Barra</th><th>Detalle</th></tr></thead><tbody>
+      ${eppList.map(([uid,data])=>{
+        const u=DB.users.find(x=>x.id===uid);const c=u?.color||'#64748b';
+        const pct=Math.round((data.total/maxEPP)*100);
+        const det=Object.entries(data.items).map(([k,v])=>`<span style="display:inline-block;background:${c}18;border:1px solid ${c}30;color:${c};border-radius:12px;padding:1px 7px;font-size:10px;margin:1px 2px">${k}: ${v}</span>`).join('');
+        return`<tr><td><div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${u?.initials||'?'}</div>
+          <span>${data.name}</span></div></td>
+          <td><span style="font-size:15px;font-weight:600;color:${data.total>0?c:'var(--text3)'}">${data.total}</span> <span style="font-size:11px;color:var(--text3)">u.</span></td>
+          <td><div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${c};border-radius:4px"></div></div></td>
+          <td>${det||'<span style="color:var(--text3);font-size:11px">Sin retiros</span>'}</td></tr>`;
+      }).join('')}
+      </tbody></table></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" class="dashboard-grid">
       <div>
         <div class="section-header"><div class="section-title" style="font-size:13px">Stock crítico</div></div>
@@ -532,7 +480,7 @@ function renderDashboard(el){
       <div>
         <div class="section-header"><div class="section-title" style="font-size:13px">Últimos movimientos</div></div>
         <div class="table-wrap"><div class="tbl-scroll"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th></tr></thead><tbody>
-        ${DB.movements.slice(-5).reverse().map(m=>`<tr>
+        ${DB.movements.slice(0,6).map(m=>`<tr>
           <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
           <td>${m.productName}</td>
           <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
@@ -542,84 +490,54 @@ function renderDashboard(el){
     </div>`;
 }
 
-// ── DASHBOARD (usuario operador) ──────────────────────────────────
+// ── DASHBOARD USUARIO ─────────────────────────────────────────────
 function renderUserDashboard(el){
-  const now=new Date();
-  const today=now.toISOString().slice(0,10);
-  function daysAgo(n){
-    const d=new Date(now);
-    d.setDate(d.getDate()-n);
-    return d.toISOString().slice(0,10);
-  }
-  const from7=daysAgo(7), from30=daysAgo(30);
-
-  const myMovs=DB.movements.filter(m=>m.userId===currentUser.id);
-  const movs7=myMovs.filter(m=>m.date>=from7 && m.date<=today);
-  const movs30=myMovs.filter(m=>m.date>=from30 && m.date<=today);
-
-  const sum=(arr)=>arr.reduce((a,m)=>a+m.qty,0);
-  const countByType=(arr,type)=>arr.filter(m=>m.type===type).length;
-
-  // breakdown by product for last 30 days
-  const byProduct30={};
-  movs30.forEach(m=>{
-    byProduct30[m.productName]=(byProduct30[m.productName]||0)+m.qty;
-  });
-  const prodList30=Object.entries(byProduct30).sort((a,b)=>b[1]-a[1]);
-  const maxProd30=Math.max(...prodList30.map(([,v])=>v),1);
-
+  const now=new Date(),td=now.toISOString().slice(0,10);
+  function ago(n){const d=new Date(now);d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+  const my=DB.movements.filter(m=>m.userId===currentUser.id);
+  const m7=my.filter(m=>m.date>=ago(7)&&m.date<=td);
+  const m30=my.filter(m=>m.date>=ago(30)&&m.date<=td);
+  const sum=a=>a.reduce((s,m)=>s+m.qty,0);
+  const byP={};m30.forEach(m=>{byP[m.productName]=(byP[m.productName]||0)+m.qty;});
+  const pl=Object.entries(byP).sort((a,b)=>b[1]-a[1]);
+  const maxP=Math.max(...pl.map(([,v])=>v),1);
   el.innerHTML=`
-    <div class="section-header">
-      <div class="section-title">Mi dashboard</div>
+    <div class="section-header"><div class="section-title">Mi dashboard</div>
       <span style="font-size:11px;color:var(--text3)">${new Date().toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'})}</span>
     </div>
-
     <div class="stats-grid">
-      <div class="stat-card" style="--accent-c:#0ea5e9"><div class="stat-label">${I.nav_movements} Últimos 7 días</div><div class="stat-value">${movs7.length}</div><div class="stat-sub">movimientos</div></div>
-      <div class="stat-card" style="--accent-c:#f59e0b"><div class="stat-label">${I.nav_register} Unidades (7d)</div><div class="stat-value">${sum(movs7)}</div><div class="stat-sub">retiradas / ingresadas</div></div>
-      <div class="stat-card" style="--accent-c:#10b981"><div class="stat-label">${I.nav_movements} Últimos 30 días</div><div class="stat-value">${movs30.length}</div><div class="stat-sub">movimientos</div></div>
-      <div class="stat-card" style="--accent-c:#8b5cf6"><div class="stat-label">${I.nav_register} Unidades (30d)</div><div class="stat-value">${sum(movs30)}</div><div class="stat-sub">retiradas / ingresadas</div></div>
+      <div class="stat-card" style="--accent-c:#0ea5e9"><div class="stat-label">${I.nav_movements} Últ. 7 días</div><div class="stat-value">${m7.length}</div><div class="stat-sub">movimientos</div></div>
+      <div class="stat-card" style="--accent-c:#f59e0b"><div class="stat-label">Unidades (7d)</div><div class="stat-value">${sum(m7)}</div><div class="stat-sub">retiradas/ingresadas</div></div>
+      <div class="stat-card" style="--accent-c:#10b981"><div class="stat-label">${I.nav_movements} Últ. 30 días</div><div class="stat-value">${m30.length}</div><div class="stat-sub">movimientos</div></div>
+      <div class="stat-card" style="--accent-c:#8b5cf6"><div class="stat-label">Unidades (30d)</div><div class="stat-value">${sum(m30)}</div><div class="stat-sub">retiradas/ingresadas</div></div>
     </div>
-
-    <div class="section-header" style="margin-top:.25rem"><div class="section-title" style="font-size:13px">Mis productos retirados — últimos 30 días</div></div>
-    <div class="table-wrap" style="margin-bottom:1rem">
-      <div class="tbl-scroll"><table>
-        <thead><tr><th>Producto</th><th>Cantidad</th><th style="min-width:140px">Distribución</th></tr></thead>
-        <tbody>
-        ${prodList30.length?prodList30.map(([name,total])=>{
-          const pct=Math.round((total/maxProd30)*100);
-          return`<tr>
-            <td>${name}</td>
-            <td style="font-weight:600;color:var(--accent)">${total}</td>
-            <td><div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;min-width:100px">
-              <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px"></div>
-            </div></td>
-          </tr>`;
-        }).join(''):`<tr><td colspan="3" class="empty">${I.inbox}Sin movimientos en los últimos 30 días</td></tr>`}
-        </tbody>
-      </table></div>
-    </div>
-
+    <div class="section-header"><div class="section-title" style="font-size:13px">Productos retirados — últimos 30 días</div></div>
+    <div class="table-wrap" style="margin-bottom:1rem"><div class="tbl-scroll"><table>
+      <thead><tr><th>Producto</th><th>Cant.</th><th style="min-width:140px">Barra</th></tr></thead><tbody>
+      ${pl.length?pl.map(([name,total])=>{const pct=Math.round((total/maxP)*100);
+        return`<tr><td>${name}</td><td style="font-weight:600;color:var(--accent)">${total}</td>
+          <td><div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px"></div></div></td></tr>`;
+      }).join(''):`<tr><td colspan="3" class="empty">${I.inbox}Sin movimientos en los últimos 30 días</td></tr>`}
+      </tbody></table></div></div>
     <div class="section-header"><div class="section-title" style="font-size:13px">Mis últimos movimientos</div></div>
-    <div class="table-wrap">
-      <div class="tbl-scroll"><table><thead><tr><th>Fecha</th><th>Código</th><th>Producto</th><th>Tipo</th><th>Cant.</th></tr></thead><tbody>
-      ${myMovs.slice(-8).reverse().map(m=>`<tr>
-        <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
-        <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${m.code}</td>
-        <td>${m.productName}</td>
-        <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
-        <td style="font-weight:600">${m.qty}</td>
-      </tr>`).join('')||`<tr><td colspan="5" class="empty">${I.inbox}Sin movimientos registrados</td></tr>`}
-      </tbody></table></div>
-    </div>`;
+    <div class="table-wrap"><div class="tbl-scroll"><table><thead><tr><th>Fecha</th><th>Código</th><th>Producto</th><th>Tipo</th><th>Cant.</th></tr></thead><tbody>
+    ${my.slice(0,8).map(m=>`<tr>
+      <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${m.code}</td>
+      <td>${m.productName}</td>
+      <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
+      <td style="font-weight:600">${m.qty}</td>
+    </tr>`).join('')||`<tr><td colspan="5" class="empty">${I.inbox}Sin movimientos</td></tr>`}
+    </tbody></table></div></div>`;
 }
 
-// ── MOVEMENTS ─────────────────────────────────────────────────────
-let movFilter='all', movSearch='';
+// ── MOVIMIENTOS ───────────────────────────────────────────────────
+let movFilter='all',movSearch='';
 function renderMovements(el){
   const isAdmin=currentUser.role==='admin';
   let movs=DB.movements.filter(m=>{
-    if(!isAdmin && m.userId!==currentUser.id) return false;
+    if(!isAdmin&&m.userId!==currentUser.id)return false;
     const ms=m.productName.toLowerCase().includes(movSearch.toLowerCase())||m.userName.toLowerCase().includes(movSearch.toLowerCase())||m.code.toLowerCase().includes(movSearch.toLowerCase());
     const mf=movFilter==='all'||(movFilter==='in'&&m.type==='Entrada')||(movFilter==='out'&&m.type==='Salida');
     return ms&&mf;
@@ -645,40 +563,34 @@ function renderMovements(el){
         <td>${m.productName}</td>
         <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
         <td style="font-weight:600">${m.qty}</td>
-        ${isAdmin?`<td style="white-space:nowrap">${m.userName}</td><td><div class="action-btns">
-          <button class="icon-btn" onclick="openMovementForm('${m.id}')" title="Editar">${I.edit}</button>
-          <button class="icon-btn del" onclick="deleteMovement('${m.id}')" title="Eliminar">${I.trash}</button>
+        ${isAdmin?`<td style="white-space:nowrap">${m.userName}</td>
+        <td><div class="action-btns">
+          <button class="icon-btn" onclick="openMovementForm('${m.id}')">${I.edit}</button>
+          <button class="icon-btn del" onclick="deleteMovement('${m.id}')">${I.trash}</button>
         </div></td>`:''}
       </tr>`).join(''):`<tr><td colspan="${cols}" class="empty">${I.inbox}Sin resultados</td></tr>`}
       </tbody></table></div>
     </div>`;
 }
-function setMovFilter(f){movFilter=f; navigate('movements');}
+function setMovFilter(f){movFilter=f;navigate('movements');}
 
 function openMovementForm(id){
-  const m=DB.movements.find(x=>x.id===id);
-  if(!m)return;
+  const m=DB.movements.find(x=>x.id===id);if(!m)return;
   document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
     <div class="panel">
       <div class="panel-title">Editar movimiento <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
       <div class="form-row"><label>Fecha</label><input type="date" id="fm-date" value="${m.date}"></div>
-      <div class="form-row"><label>Producto</label>
-        <select id="fm-prod">
-          ${DB.products.map(p=>`<option value="${p.id}" ${p.id===m.productId?'selected':''}>${p.name} (${p.code})</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-row"><label>Tipo</label>
-        <select id="fm-type">
-          <option value="Entrada" ${m.type==='Entrada'?'selected':''}>Entrada</option>
-          <option value="Salida" ${m.type==='Salida'?'selected':''}>Salida</option>
-        </select>
-      </div>
+      <div class="form-row"><label>Producto</label><select id="fm-prod">
+        ${DB.products.map(p=>`<option value="${p.id}" ${p.id===m.productId?'selected':''}>${p.name} (${p.code})</option>`).join('')}
+      </select></div>
+      <div class="form-row"><label>Tipo</label><select id="fm-type">
+        <option value="Entrada" ${m.type==='Entrada'?'selected':''}>Entrada</option>
+        <option value="Salida" ${m.type==='Salida'?'selected':''}>Salida</option>
+      </select></div>
       <div class="form-row"><label>Cantidad</label><input type="number" id="fm-qty" value="${m.qty}" min="1" inputmode="numeric"></div>
-      <div class="form-row"><label>Usuario</label>
-        <select id="fm-user">
-          ${DB.users.map(u=>`<option value="${u.id}" ${u.id===m.userId?'selected':''}>${u.name}</option>`).join('')}
-        </select>
-      </div>
+      <div class="form-row"><label>Usuario</label><select id="fm-user">
+        ${DB.users.map(u=>`<option value="${u.id}" ${u.id===m.userId?'selected':''}>${u.name}</option>`).join('')}
+      </select></div>
       <div class="form-actions">
         <button class="btn-sm" onclick="closeOverlay()">Cancelar</button>
         <button class="btn-sm accent" onclick="saveMovement('${id}')">${I.check} Guardar</button>
@@ -687,8 +599,7 @@ function openMovementForm(id){
   </div>`;
 }
 async function saveMovement(id){
-  const m=DB.movements.find(x=>x.id===id);
-  if(!m)return;
+  const m=DB.movements.find(x=>x.id===id);if(!m)return;
   const date=document.getElementById('fm-date').value;
   const prodId=document.getElementById('fm-prod').value;
   const type=document.getElementById('fm-type').value;
@@ -698,58 +609,42 @@ async function saveMovement(id){
   const p=DB.products.find(x=>x.id===prodId);
   if(!date||!p||qty<1){toast('Completá todos los campos','err');return;}
   try{
-    // revert stock of old movement, apply new
     const oldP=DB.products.find(x=>x.id===m.productId);
-    let oldNewStock=null;
     if(oldP){
-      oldNewStock = m.type==='Entrada' ? oldP.stock-m.qty : oldP.stock+m.qty;
-      if(oldP.id===p.id){ /* same product, will be overwritten below */ }
-      else{ await sbUpdate('products', oldP.id, {stock: oldNewStock}); oldP.stock=oldNewStock; }
+      const ns=m.type==='Entrada'?oldP.stock-m.qty:oldP.stock+m.qty;
+      await sbPatch('products',oldP.id,{stock:ns});oldP.stock=ns;
     }
-    let pStockBase = (oldP && oldP.id===p.id) ? oldNewStock : p.stock;
-    const pNewStock = type==='Entrada' ? pStockBase+qty : pStockBase-qty;
-    await sbUpdate('products', p.id, {stock: pNewStock});
-    p.stock = pNewStock;
-
-    await sbUpdate('movements', id, {
-      date, product_id:p.id, product_name:p.name, product_code:p.code,
-      type, qty, user_id:userId, user_name:u?.name||m.userName
-    });
+    const ns2=type==='Entrada'?p.stock+qty:p.stock-qty;
+    await sbPatch('products',p.id,{stock:ns2});p.stock=ns2;
+    await sbPatch('movements',id,{date,product_id:p.id,product_name:p.name,product_code:p.code,type,qty,user_id:userId,user_name:u?.name||m.userName});
     Object.assign(m,{date,productId:p.id,productName:p.name,code:p.code,type,qty,userId,userName:u?.name||m.userName});
-    closeOverlay(); toast('Movimiento actualizado'); navigate('movements');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+    closeOverlay();toast('Movimiento actualizado');navigate('movements');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 async function deleteMovement(id){
   if(!confirm('¿Eliminar este movimiento?'))return;
   const m=DB.movements.find(x=>x.id===id);
   try{
-    if(m){
-      const p=DB.products.find(x=>x.id===m.productId);
-      if(p){
-        const ns = m.type==='Entrada' ? p.stock-m.qty : p.stock+m.qty;
-        await sbUpdate('products', p.id, {stock: ns});
-        p.stock = ns;
-      }
+    if(m){const p=DB.products.find(x=>x.id===m.productId);
+      if(p){const ns=m.type==='Entrada'?p.stock-m.qty:p.stock+m.qty;await sbPatch('products',p.id,{stock:ns});p.stock=ns;}
     }
-    await sbDelete('movements', id);
+    await sbDel('movements',id);
     DB.movements=DB.movements.filter(x=>x.id!==id);
-    toast('Movimiento eliminado'); navigate('movements');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+    toast('Movimiento eliminado');navigate('movements');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 
 // ── REGISTRO ─────────────────────────────────────────────────────
 function renderRegister(el){
   const isAdmin=currentUser.role==='admin';
   const typeSection=isAdmin?`
-    <div class="reg-field">
-      <label>Tipo de movimiento</label>
+    <div class="reg-field"><label>Tipo de movimiento</label>
       <div class="type-toggle">
         <div class="type-btn ${regType==='Entrada'?'active-in':''}" onclick="setRegType('Entrada')">↓ Entrada</div>
         <div class="type-btn ${regType==='Salida'?'active-out':''}" onclick="setRegType('Salida')">↑ Salida</div>
       </div>
     </div>`
   :`<div style="margin-bottom:1rem;padding:9px 12px;background:#f59e0b0e;border:1px solid #f59e0b30;border-radius:9px;font-size:12px;color:#fbbf24">↑ Solo podés registrar <strong>Salidas</strong></div>`;
-
   el.innerHTML=`
     <div class="section-header"><div class="section-title">Registrar movimiento</div></div>
     <div class="reg-wrap">
@@ -757,12 +652,12 @@ function renderRegister(el){
         ${typeSection}
         <div class="reg-field">
           <label>Código o nombre del producto</label>
-          <input type="text" id="regCode" placeholder="Ej: EPP-CSC-001 o Casco de seguridad" value="${regScanned}" oninput="onRegCodeInput(this.value)" autocomplete="off" autocapitalize="characters">
+          <input type="text" id="regCode" placeholder="Ej: EPP-CSC-001 o Casco..." value="${regScanned}" oninput="onRegCodeInput(this.value)" autocomplete="off">
           <div class="prod-hint" id="prodHint"></div>
         </div>
         <div class="reg-field">
           <label>Descripción / Detalle</label>
-          <input type="text" id="regDesc" placeholder="Nota o referencia adicional..." autocomplete="off">
+          <input type="text" id="regDesc" placeholder="Nota adicional..." autocomplete="off">
         </div>
         <div class="reg-field">
           <label>Cantidad</label>
@@ -771,164 +666,145 @@ function renderRegister(el){
         <button class="btn-sm accent" onclick="submitMovement()" style="width:100%;justify-content:center;padding:13px;font-size:14px">
           ${I.check} Confirmar movimiento
         </button>
-        <button class="qr-btn" onclick="openScanner()">
-          ${I.scan} Escanear QR / código de barras
-        </button>
+        <button class="qr-btn" onclick="openScanner()">${I.scan} Escanear QR / código de barras</button>
       </div>
       <div>
         <div class="reg-field" style="margin-bottom:8px">
-          <label>Buscar producto (código o nombre)</label>
-          <div class="search-box">${I.search}<input type="text" id="regProdSearch" placeholder="Buscar por código o nombre..." oninput="filterRegProdList(this.value)" autocomplete="off"></div>
+          <label>Buscar producto</label>
+          <div class="search-box">${I.search}<input type="text" id="regProdSearch" placeholder="Código o nombre..." oninput="filterRegProdList(this.value)" autocomplete="off"></div>
         </div>
-        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-weight:500;letter-spacing:.6px;text-transform:uppercase">Tocá un producto para cargarlo</div>
-        <div class="prod-list" id="regProdList">
-          ${renderRegProdList(DB.products)}
-        </div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-weight:500;letter-spacing:.6px;text-transform:uppercase">Tocá para cargar</div>
+        <div class="prod-list" id="regProdList">${renderRegProdList(DB.products)}</div>
       </div>
     </div>`;
-  if(regScanned) setTimeout(()=>onRegCodeInput(regScanned),50);
+  if(regScanned)setTimeout(()=>onRegCodeInput(regScanned),50);
 }
 function renderRegProdList(prods){
-  if(!prods.length) return `<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">${I.inbox}Sin resultados</div>`;
-  return prods.map(p=>`
-    <div class="prod-list-item" onclick="fillRegCode('${p.code}')">
-      <div>
-        <div style="font-size:13px;font-weight:500">${p.name}</div>
-        <div style="font-size:10px;font-family:monospace;color:var(--accent);margin-top:2px">${p.code}</div>
+  if(!prods.length)return`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">${I.inbox}Sin resultados</div>`;
+  return prods.map(p=>{
+    const img=p.image_url
+      ?`<img src="${p.image_url}" class="reg-prod-img" alt="${p.name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+      :'';
+    const ph=`<div class="reg-prod-img-ph" ${p.image_url?'style="display:none"':''}>${I.image}</div>`;
+    return`<div class="prod-list-item" onclick="fillRegCode('${p.code}')">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        ${img}${ph}
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+          <div style="font-size:10px;font-family:monospace;color:var(--accent);margin-top:2px">${p.code}</div>
+        </div>
       </div>
       <div style="text-align:right;flex-shrink:0;margin-left:8px">
         <span class="pill ${p.stock<p.minStock?'pill-low':'pill-ok'}">${p.stock} ${p.unit}</span>
         <div style="font-size:10px;color:var(--text3);margin-top:3px">${p.category}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function filterRegProdList(q){
-  const term=q.trim().toLowerCase();
-  const rows=DB.products.filter(p=>p.code.toLowerCase().includes(term)||p.name.toLowerCase().includes(term));
-  const list=document.getElementById('regProdList');
-  if(list) list.innerHTML=renderRegProdList(rows);
+  const t=q.trim().toLowerCase();
+  const rows=DB.products.filter(p=>p.code.toLowerCase().includes(t)||p.name.toLowerCase().includes(t));
+  const list=document.getElementById('regProdList');if(list)list.innerHTML=renderRegProdList(rows);
 }
-function setRegType(t){regType=t; navigate('register');}
+function setRegType(t){regType=t;navigate('register');}
 function onRegCodeInput(val){
   regScanned=val;
-  const hint=document.getElementById('prodHint');
-  if(!hint)return;
-  const term=val.trim().toLowerCase();
-  const p=DB.products.find(pr=>pr.code.toLowerCase()===term||pr.name.toLowerCase()===term);
+  const hint=document.getElementById('prodHint');if(!hint)return;
+  const t=val.trim().toLowerCase();
+  const p=DB.products.find(pr=>pr.code.toLowerCase()===t||pr.name.toLowerCase()===t);
   if(p){
     hint.className='prod-hint found';
     hint.innerHTML=`✓ <strong>${p.name}</strong> · Stock: <strong>${p.stock} ${p.unit}</strong> <span class="pill" style="${catPillStyle(p.category)}">${p.category}</span>`;
-  }else if(val.length>2){
-    hint.className='prod-hint notfound';
-    hint.textContent='✗ Código no encontrado';
-  }else{
-    hint.className='prod-hint';
-    hint.textContent='';
-  }
+  }else if(val.length>2){hint.className='prod-hint notfound';hint.textContent='✗ Código no encontrado';}
+  else{hint.className='prod-hint';hint.textContent='';}
 }
 function fillRegCode(code){
   const ci=document.getElementById('regCode');
-  if(ci){ci.value=code; onRegCodeInput(code);}
-  regScanned=code;
+  if(ci){ci.value=code;onRegCodeInput(code);}regScanned=code;
 }
 async function submitMovement(){
   const code=(document.getElementById('regCode')?.value||'').trim();
   const qty=parseInt(document.getElementById('regQty')?.value)||1;
   const desc=document.getElementById('regDesc')?.value||'';
   const type=currentUser.role==='admin'?regType:'Salida';
-  const term=code.toLowerCase();
-  const p=DB.products.find(pr=>pr.code.toLowerCase()===term||pr.name.toLowerCase()===term);
+  const t=code.toLowerCase();
+  const p=DB.products.find(pr=>pr.code.toLowerCase()===t||pr.name.toLowerCase()===t);
   if(!p){toast('Ingresá un código o nombre válido','err');return;}
   if(qty<1){toast('Cantidad inválida','err');return;}
   if(type==='Salida'&&p.stock<qty){toast(`Stock insuficiente (disponible: ${p.stock} ${p.unit})`,'err');return;}
   try{
-    const newStock = type==='Entrada' ? p.stock+qty : p.stock-qty;
-    const body={
-      date:new Date().toISOString().slice(0,10), type,
-      product_id:p.id, product_name:p.name, product_code:p.code,
-      qty, user_id:currentUser.id, user_name:currentUser.name, description:desc
-    };
-    const [newMov] = await sbInsert('movements', body);
-    await sbUpdate('products', p.id, {stock:newStock});
-    p.stock = newStock;
-    DB.movements.unshift({...newMov, productId:newMov.product_id, productName:newMov.product_name, code:newMov.product_code, userId:newMov.user_id, userName:newMov.user_name});
-    regScanned='';
-    toast('Movimiento registrado');
-    navigate('movements');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+    const ns=type==='Entrada'?p.stock+qty:p.stock-qty;
+    const body={date:new Date().toISOString().slice(0,10),type,product_id:p.id,product_name:p.name,product_code:p.code,qty,user_id:currentUser.id,user_name:currentUser.name,description:desc};
+    const[newMov]=await sbPost('movements',body);
+    await sbPatch('products',p.id,{stock:ns});p.stock=ns;
+    DB.movements.unshift({...newMov,productId:newMov.product_id,productName:newMov.product_name,code:newMov.product_code,userId:newMov.user_id,userName:newMov.user_name});
+    regScanned='';toast('Movimiento registrado');navigate('movements');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 
-// ── SCANNER (native getUserMedia + ZXing) ─────────────────────────
-let scanStream=null, scanAnimFrame=null, scanCanvas=null, scanCtx=null;
+// ── SCANNER (corregido — canvas polling) ─────────────────────────
+let scanStream=null,scanTimer=null;
 
 async function openScanner(){
   const modal=document.getElementById('scannerModal');
   modal.style.display='flex';
-  document.getElementById('scannerStatus').textContent='';
+  document.getElementById('scannerStatus').textContent='Iniciando cámara...';
   const video=document.getElementById('qrVideo');
-
-  // stop any previous stream
-  if(scanStream){scanStream.getTracks().forEach(t=>t.stop()); scanStream=null;}
-  if(scanAnimFrame){cancelAnimationFrame(scanAnimFrame); scanAnimFrame=null;}
-
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  if(scanTimer){clearInterval(scanTimer);scanTimer=null;}
   try{
-    // prefer rear camera on mobile
-    const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
-    scanStream=await navigator.mediaDevices.getUserMedia(constraints);
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
     video.srcObject=scanStream;
-    video.onloadedmetadata=()=>{ video.play(); startZXing(video); };
+    await new Promise(res=>{video.onloadedmetadata=()=>{video.play();res();}});
+    document.getElementById('scannerStatus').textContent='Apuntá al código...';
+    // wait for ZXing then start polling
+    waitZXing(video,0);
   }catch(err){
     modal.style.display='none';
-    if(err.name==='NotAllowedError') toast('Permiso de cámara denegado','err');
-    else toast('No se pudo abrir la cámara','err');
+    toast(err.name==='NotAllowedError'?'Permiso de cámara denegado':'No se pudo abrir la cámara','err');
   }
 }
-
-function startZXing(video){
-  // try ZXing if available (loaded async below), else canvas fallback hint
-  if(typeof ZXing==='undefined'){
-    document.getElementById('scannerStatus').textContent='Ingresá el código manualmente si no detecta';
-    return;
-  }
-  try{
-    const reader=new ZXing.BrowserMultiFormatReader();
-    reader.decodeFromVideoElement(video,(result,err)=>{
+function waitZXing(video,attempts){
+  if(typeof ZXing!=='undefined'){startScanLoop(video);return;}
+  if(attempts>20){document.getElementById('scannerStatus').textContent='Ingresá el código manualmente';return;}
+  setTimeout(()=>waitZXing(video,attempts+1),300);
+}
+function startScanLoop(video){
+  const canvas=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  const reader=new ZXing.BrowserMultiFormatReader();
+  scanTimer=setInterval(async()=>{
+    if(!scanStream||video.readyState<2)return;
+    canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+    try{
+      const lum=new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+      const bmp=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(lum));
+      const result=reader.decodeBitmap(bmp);
       if(result){
-        const code=result.getText();
-        closeScanner();
-        fillRegCode(code);
-        toast('Código escaneado: '+code);
+        clearInterval(scanTimer);scanTimer=null;
+        closeScanner();fillRegCode(result.getText());
+        toast('Código escaneado: '+result.getText());
       }
-    });
-    // store to stop later
-    window._zxingReader=reader;
-  }catch(e){
-    document.getElementById('scannerStatus').textContent='Escáner activo';
-  }
+    }catch(e){/* no code found this frame */}
+  },200);
 }
-
 function closeScanner(){
   document.getElementById('scannerModal').style.display='none';
-  if(scanStream){scanStream.getTracks().forEach(t=>t.stop()); scanStream=null;}
-  if(window._zxingReader){try{window._zxingReader.reset();}catch(e){} window._zxingReader=null;}
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  if(scanTimer){clearInterval(scanTimer);scanTimer=null;}
 }
-
-// Load ZXing dynamically (doesn't block page load)
-(function(){
-  const s=document.createElement('script');
-  s.src='https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js';
-  s.async=true;
-  document.head.appendChild(s);
-})();
+(function(){const s=document.createElement('script');s.src='https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js';s.async=true;document.head.appendChild(s);})();
 
 // ── PRODUCTOS ─────────────────────────────────────────────────────
-let prodSortCol='code', prodSortDir='asc';
+let prodSortCol='code',prodSortDir='asc';
 function renderProducts(el){
   el.innerHTML=`
     <div class="section-header">
       <div class="section-title">Productos</div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-sm" onclick="openCategoryManager()">${I.nav_products} Categorías</button>
+        <button class="btn-sm" onclick="openImportPanel()">${I.download} Importar</button>
         <button class="btn-sm accent" onclick="openProductForm()">${I.plus} Nuevo</button>
       </div>
     </div>
@@ -945,99 +821,75 @@ function renderProducts(el){
     </div>`;
 }
 function prodHeaderCells(){
-  const cols=[
-    {key:'code',label:'Código'},
-    {key:'name',label:'Nombre'},
-    {key:'category',label:'Cat.'},
-    {key:'stock',label:'Stock'},
-    {key:'minStock',label:'Mín'},
-    {key:'estado',label:'Estado'},
-  ];
+  const cols=[{key:'foto',label:'Foto'},{key:'code',label:'Código'},{key:'name',label:'Nombre'},{key:'category',label:'Cat.'},{key:'stock',label:'Stock'},{key:'minStock',label:'Mín'},{key:'estado',label:'Estado'}];
   return cols.map(c=>{
-    const active=prodSortCol===c.key;
-    const arrow=active?(prodSortDir==='asc'?'↑':'↓'):'↕';
-    return `<th onclick="setProdSort('${c.key}')" style="cursor:pointer;user-select:none;white-space:nowrap" title="Ordenar por ${c.label}">${c.label} <span style="color:${active?'var(--accent)':'var(--text3)'};font-size:10px">${arrow}</span></th>`;
+    if(c.key==='foto') return`<th style="white-space:nowrap">Foto</th>`;
+    const active=prodSortCol===c.key;const arr=active?(prodSortDir==='asc'?'↑':'↓'):'↕';
+    return`<th onclick="setProdSort('${c.key}')" style="cursor:pointer;user-select:none;white-space:nowrap">${c.label} <span style="color:${active?'var(--accent)':'var(--text3)'};font-size:10px">${arr}</span></th>`;
   }).join('')+'<th></th>';
 }
 function setProdSort(col){
-  if(prodSortCol===col){
-    prodSortDir = prodSortDir==='asc' ? 'desc' : 'asc';
-  }else{
-    prodSortCol=col;
-    prodSortDir='asc';
-  }
-  // re-render header (for arrows) and re-apply current filter/search
-  const searchVal=document.querySelector('#mainContent .search-box input')?.value||'';
-  const catVal=document.getElementById('catF')?.value||'';
-  const theadRow=document.querySelector('#mainContent thead tr');
-  if(theadRow) theadRow.innerHTML=prodHeaderCells();
-  filterProd(searchVal,catVal);
+  prodSortDir=prodSortCol===col?(prodSortDir==='asc'?'desc':'asc'):'asc';prodSortCol=col;
+  const sv=document.querySelector('#mainContent .search-box input')?.value||'';
+  const cv=document.getElementById('catF')?.value||'';
+  const tr=document.querySelector('#mainContent thead tr');if(tr)tr.innerHTML=prodHeaderCells();
+  filterProd(sv,cv);
 }
 function sortProducts(list){
-  const dir = prodSortDir==='asc' ? 1 : -1;
-  const col = prodSortCol;
-  return [...list].sort((a,b)=>{
+  const dir=prodSortDir==='asc'?1:-1;
+  return[...list].sort((a,b)=>{
     let va,vb;
-    if(col==='estado'){
-      va = a.stock<a.minStock ? 0 : 1;
-      vb = b.stock<b.minStock ? 0 : 1;
-    }else{
-      va=a[col]; vb=b[col];
-    }
-    if(typeof va==='string'){
-      return va.localeCompare(vb,'es',{sensitivity:'base'})*dir;
-    }
-    return ((va||0)-(vb||0))*dir;
+    if(prodSortCol==='estado'){va=a.stock<a.minStock?0:1;vb=b.stock<b.minStock?0:1;}
+    else{va=a[prodSortCol];vb=b[prodSortCol];}
+    if(typeof va==='string')return va.localeCompare(vb,'es',{sensitivity:'base'})*dir;
+    return((va||0)-(vb||0))*dir;
   });
 }
-// category color helper (consistent palette by name)
 const CAT_COLORS={'EPP':'#0ea5e9','Ropa':'#8b5cf6','Materiales OyM':'#f59e0b','Herramientas':'#10b981','Material':'#8b5cf6'};
-const CAT_PALETTE=['#0ea5e9','#8b5cf6','#10b981','#f59e0b','#ec4899','#14b8a6','#f97316','#a78bfa'];
-function catColor(cat){
-  if(CAT_COLORS[cat]) return CAT_COLORS[cat];
-  // deterministic color from hash
-  let h=0; for(let i=0;i<cat.length;i++) h=(h*31+cat.charCodeAt(i))>>>0;
-  return CAT_PALETTE[h%CAT_PALETTE.length];
-}
-function catPillStyle(cat){
-  const c=catColor(cat);
-  return `background:${c}14;color:${c};border:1px solid ${c}30`;
-}
+const CAT_PAL=['#0ea5e9','#8b5cf6','#10b981','#f59e0b','#ec4899','#14b8a6','#f97316','#a78bfa'];
+function catColor(cat){if(CAT_COLORS[cat])return CAT_COLORS[cat];let h=0;for(let i=0;i<cat.length;i++)h=(h*31+cat.charCodeAt(i))>>>0;return CAT_PAL[h%CAT_PAL.length];}
+function catPillStyle(cat){const c=catColor(cat);return`background:${c}14;color:${c};border:1px solid ${c}30`;}
 function renderProdRows(prods){
-  if(!prods.length)return`<tr><td colspan="7" class="empty">${I.inbox}Sin productos</td></tr>`;
-  const sorted=sortProducts(prods);
-  return sorted.map(p=>`<tr>
-    <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${p.code}</td>
-    <td>${p.name}</td>
-    <td><span class="pill" style="${catPillStyle(p.category)}">${p.category}</span></td>
-    <td style="font-weight:600;white-space:nowrap">${p.stock} <span style="color:var(--text3);font-weight:400;font-size:11px">${p.unit}</span></td>
-    <td style="color:var(--text3)">${p.minStock}</td>
-    <td><span class="pill ${p.stock<p.minStock?'pill-low':'pill-ok'}">${p.stock<p.minStock?'Bajo':'OK'}</span></td>
-    <td><div class="action-btns">
-      <button class="icon-btn" onclick="openProductForm('${p.id}')" title="Editar">${I.edit}</button>
-      <button class="icon-btn del" onclick="deleteProduct('${p.id}')" title="Eliminar">${I.trash}</button>
-    </div></td>
-  </tr>`).join('');
+  if(!prods.length)return`<tr><td colspan="8" class="empty">${I.inbox}Sin productos</td></tr>`;
+  return sortProducts(prods).map(p=>{
+    const thumb=p.image_url
+      ?`<img src="${p.image_url}" class="prod-thumb" alt="${p.name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+      :'';
+    const ph=`<div class="prod-thumb-ph" ${p.image_url?'style="display:none"':''}>${I.image}</div>`;
+    return`<tr>
+      <td><div style="display:flex">${thumb}${ph}</div></td>
+      <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${p.code}</td>
+      <td>${p.name}</td>
+      <td><span class="pill" style="${catPillStyle(p.category)}">${p.category}</span></td>
+      <td style="font-weight:600;white-space:nowrap">${p.stock} <span style="color:var(--text3);font-weight:400;font-size:11px">${p.unit}</span></td>
+      <td style="color:var(--text3)">${p.minStock}</td>
+      <td><span class="pill ${p.stock<p.minStock?'pill-low':'pill-ok'}">${p.stock<p.minStock?'Bajo':'OK'}</span></td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="openProductForm('${p.id}')">${I.edit}</button>
+        <button class="icon-btn del" onclick="deleteProduct('${p.id}')">${I.trash}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
 }
 function filterProd(s,cat){
   const rows=DB.products.filter(p=>(p.name.toLowerCase().includes(s.toLowerCase())||p.code.toLowerCase().includes(s.toLowerCase()))&&(!cat||p.category===cat));
-  const tb=document.getElementById('prodTable');
-  if(tb)tb.innerHTML=renderProdRows(rows);
+  const tb=document.getElementById('prodTable');if(tb)tb.innerHTML=renderProdRows(rows);
 }
 function openProductForm(id){
   const p=id?DB.products.find(pr=>pr.id===id):null;
+  const extra=(p&&!DB.categories.includes(p.category))?`<option value="${p.category}" selected>${p.category}</option>`:'';
+  const currentImg=p?.image_url||'';
   document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
-    <div class="panel">
+    <div class="panel" style="max-width:500px">
       <div class="panel-title">${p?'Editar':'Nuevo'} producto <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
       <div class="form-grid">
         <div class="form-row"><label>Código</label><input id="fp-code" placeholder="MAT-XXX-001" value="${p?p.code:''}"></div>
         <div class="form-row"><label>Categoría</label>
           <select id="fp-cat" onchange="onCatSelectChange(this)">
-            ${DB.categories.map(c=>`<option value="${c}" ${p?.category===c?'selected':''}>${c}</option>`).join('')}
-            ${(p&&!DB.categories.includes(p.category))?`<option value="${p.category}" selected>${p.category}</option>`:''}
-            <option value="__new__">+ Agregar nueva categoría...</option>
+            ${DB.categories.map(c=>`<option value="${c}" ${p?.category===c?'selected':''}>${c}</option>`).join('')}${extra}
+            <option value="__new__">+ Nueva categoría...</option>
           </select>
-          <input type="text" id="fp-cat-new" placeholder="Nombre de la nueva categoría" style="margin-top:8px;display:none">
+          <input type="text" id="fp-cat-new" placeholder="Nombre de categoría" style="margin-top:8px;display:none">
         </div>
       </div>
       <div class="form-row"><label>Nombre del producto</label><input id="fp-name" placeholder="Nombre" value="${p?p.name:''}"></div>
@@ -1046,6 +898,24 @@ function openProductForm(id){
         <div class="form-row"><label>Stock mínimo</label><input type="number" id="fp-min" value="${p?p.minStock:5}" min="0"></div>
         <div class="form-row"><label>Unidad</label><input id="fp-unit" placeholder="u / caja / m" value="${p?p.unit:'u'}"></div>
       </div>
+      <div class="form-row">
+        <label>Foto de referencia</label>
+        <div class="photo-drop" id="photoDropZone"
+          ondragover="event.preventDefault();document.getElementById('photoDropZone').style.borderColor='var(--accent)'"
+          ondragleave="document.getElementById('photoDropZone').style.borderColor=''"
+          ondrop="event.preventDefault();document.getElementById('photoDropZone').style.borderColor='';handlePhotoSelect(event.dataTransfer.files[0])">
+          <input type="file" accept="image/*" onchange="handlePhotoSelect(this.files[0])">
+          <div id="photoDropContent">
+            ${currentImg
+              ?`<img src="${currentImg}" class="photo-preview-img" id="photoPreviewImg" alt="foto actual">
+                 <div style="font-size:11px;color:var(--text3);margin-top:6px">Foto actual — arrastrá o hacé clic para cambiarla</div>`
+              :`${I.image}<div style="font-size:13px;font-weight:500;margin-top:6px">Arrastrá una imagen o hacé clic para seleccionar</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:3px">JPG, PNG, WEBP — máx. 5MB</div>`
+            }
+          </div>
+        </div>
+        ${currentImg?`<button class="btn-sm danger" style="margin-top:8px;font-size:11px" onclick="removeProductPhoto('${id||''}')">Eliminar foto actual</button>`:''}
+      </div>
       <div class="form-actions">
         <button class="btn-sm" onclick="closeOverlay()">Cancelar</button>
         <button class="btn-sm accent" onclick="saveProduct('${id||''}')">${I.check} Guardar</button>
@@ -1053,14 +923,47 @@ function openProductForm(id){
     </div>
   </div>`;
 }
+let pendingPhotoFile=null;
+function handlePhotoSelect(file){
+  if(!file)return;
+  if(file.size>5*1024*1024){toast('La imagen no puede superar 5MB','err');return;}
+  pendingPhotoFile=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const content=document.getElementById('photoDropContent');
+    if(content) content.innerHTML=`<img src="${e.target.result}" class="photo-preview-img" alt="preview">
+      <div style="font-size:11px;color:var(--success);margin-top:6px">✓ ${file.name} — lista para guardar</div>`;
+  };
+  reader.readAsDataURL(file);
+}
 function onCatSelectChange(sel){
-  const newInput=document.getElementById('fp-cat-new');
-  if(sel.value==='__new__'){
-    newInput.style.display='block';
-    newInput.focus();
-  }else{
-    newInput.style.display='none';
-  }
+  const ni=document.getElementById('fp-cat-new');
+  ni.style.display=sel.value==='__new__'?'block':'none';
+  if(sel.value==='__new__')ni.focus();
+}
+async function uploadProductPhoto(file, productId){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const path=`${productId}.${ext}`;
+  const res=await fetch(`${SB_URL}/storage/v1/object/product-images/${path}`,{
+    method:'POST',
+    headers:{...SBH,'Content-Type':file.type,'x-upsert':'true'},
+    body:file
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return `${SB_URL}/storage/v1/object/public/product-images/${path}?t=${Date.now()}`;
+}
+async function removeProductPhoto(id){
+  if(!confirm('¿Eliminar la foto de este producto?'))return;
+  try{
+    const p=DB.products.find(pr=>pr.id===id);
+    if(p?.image_url){
+      const path=p.image_url.split('/product-images/')[1]?.split('?')[0];
+      if(path) await fetch(`${SB_URL}/storage/v1/object/product-images/${path}`,{method:'DELETE',headers:SBH});
+    }
+    await sbPatch('products',id,{image_url:null});
+    if(p) p.image_url=null;
+    closeOverlay(); toast('Foto eliminada'); navigate('products');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 async function saveProduct(id){
   const code=document.getElementById('fp-code').value.trim();
@@ -1073,46 +976,53 @@ async function saveProduct(id){
     cat=document.getElementById('fp-cat-new').value.trim();
     if(!cat){toast('Ingresá el nombre de la nueva categoría','err');return;}
     if(!DB.categories.includes(cat)){
-      try{ const [res]=await sbInsert('categories',{name:cat}); DB.categories.push(cat); DB.categoryIds[cat]=res.id; }
-      catch(e){ toast('Error al crear categoría: '+e.message,'err'); return; }
+      try{const[res]=await sbPost('categories',{name:cat});DB.categories.push(cat);DB.catIds[cat]=res.id;}
+      catch(e){toast('Error al crear categoría: '+e.message,'err');return;}
     }
   }
   if(!code||!name){toast('Completá los campos requeridos','err');return;}
-  // check for duplicate code (only when creating new, or when editing and code changed)
   const dup=DB.products.find(pr=>pr.code.toLowerCase()===code.toLowerCase()&&pr.id!==id);
   if(dup){toast(`Ya existe un producto con ese código: "${dup.name}"`,'err');return;}
   try{
     const body={code,name,category:cat,stock,min_stock:minStock,unit};
+    let savedId=id;
     if(id){
-      await sbUpdate('products',id,body);
+      await sbPatch('products',id,body);
       const p=DB.products.find(pr=>pr.id===id);
       if(p)Object.assign(p,{code,name,category:cat,stock,minStock,unit});
     }else{
-      const [res]=await sbInsert('products',body);
-      DB.products.push({...res, minStock:res.min_stock});
+      const[res]=await sbPost('products',body);
+      DB.products.push({...res,minStock:res.min_stock});
+      savedId=res.id;
     }
-    closeOverlay(); toast(id?'Producto actualizado':'Producto creado'); navigate('products');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+    // upload photo if selected
+    if(pendingPhotoFile&&savedId){
+      try{
+        const url=await uploadProductPhoto(pendingPhotoFile,savedId);
+        await sbPatch('products',savedId,{image_url:url});
+        const p=DB.products.find(pr=>pr.id===savedId);
+        if(p) p.image_url=url;
+        pendingPhotoFile=null;
+      }catch(e){toast('Producto guardado pero la foto falló: '+e.message,'err');}
+    }
+    closeOverlay();toast(id?'Producto actualizado':'Producto creado');navigate('products');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 async function deleteProduct(id){
   if(!confirm('¿Eliminar este producto?'))return;
-  try{
-    await sbDelete('products',id);
-    DB.products=DB.products.filter(p=>p.id!==id);
-    toast('Producto eliminado'); navigate('products');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+  try{await sbDel('products',id);DB.products=DB.products.filter(p=>p.id!==id);toast('Producto eliminado');navigate('products');}
+  catch(e){toast('Error: '+e.message,'err');}
 }
 
-// ── CATEGORY MANAGER ────────────────────────────────────────────
+// ── CATEGORÍAS ────────────────────────────────────────────────────
 function openCategoryManager(){
   document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
     <div class="panel">
-      <div class="panel-title">Categorías <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
+      <div class="panel-title">Categorías <button class="icon-btn" onclick="closeOverlay();navigate('products')">${I.x}</button></div>
       <div id="catManagerList"></div>
-      <div class="form-row" style="margin-top:14px">
-        <label>Nueva categoría</label>
+      <div class="form-row" style="margin-top:14px"><label>Nueva categoría</label>
         <div style="display:flex;gap:8px">
-          <input type="text" id="newCatInput" placeholder="Nombre de categoría" style="flex:1">
+          <input type="text" id="newCatInput" placeholder="Nombre" style="flex:1">
           <button class="btn-sm accent" onclick="addCategory()">${I.plus} Agregar</button>
         </div>
       </div>
@@ -1124,67 +1034,53 @@ function openCategoryManager(){
   renderCategoryManagerList();
 }
 function renderCategoryManagerList(){
-  const list=document.getElementById('catManagerList');
-  if(!list)return;
+  const list=document.getElementById('catManagerList');if(!list)return;
   list.innerHTML=DB.categories.map((c,i)=>{
     const count=DB.products.filter(p=>p.category===c).length;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+    return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
       <span class="pill" style="${catPillStyle(c)};flex-shrink:0">${c}</span>
       <input type="text" value="${c}" id="catEdit${i}" style="flex:1;background:var(--navy);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px;outline:none">
       <span style="font-size:11px;color:var(--text3);white-space:nowrap">${count} prod.</span>
-      <button class="icon-btn" title="Guardar" onclick="renameCategory(${i})">${I.check}</button>
-      <button class="icon-btn del" title="Eliminar" onclick="removeCategory(${i})">${I.trash}</button>
+      <button class="icon-btn" onclick="renameCategory(${i})">${I.check}</button>
+      <button class="icon-btn del" onclick="removeCategory(${i})">${I.trash}</button>
     </div>`;
   }).join('');
 }
-function renameCategory(i){
+async function renameCategory(i){
   const oldName=DB.categories[i];
   const newName=document.getElementById('catEdit'+i).value.trim();
   if(!newName){toast('El nombre no puede estar vacío','err');return;}
   if(newName===oldName)return;
-  if(DB.categories.includes(newName)){toast('Ya existe una categoría con ese nombre','err');return;}
-  const catId = DB.categoryIds[oldName];
-  (async()=>{
-    try{
-      if(catId) await sbUpdate('categories', catId, {name:newName});
-      // reassign products using this category
-      const prods = DB.products.filter(p=>p.category===oldName);
-      for(const p of prods){ await sbUpdate('products', p.id, {category:newName}); p.category=newName; }
-      DB.categories[i]=newName;
-      delete DB.categoryIds[oldName];
-      DB.categoryIds[newName]=catId;
-      toast('Categoría actualizada'); renderCategoryManagerList();
-    }catch(e){ toast('Error: '+e.message,'err'); }
-  })();
+  if(DB.categories.includes(newName)){toast('Ya existe esa categoría','err');return;}
+  try{
+    const catId=DB.catIds[oldName];
+    if(catId)await sbPatch('categories',catId,{name:newName});
+    const prods=DB.products.filter(p=>p.category===oldName);
+    for(const p of prods){await sbPatch('products',p.id,{category:newName});p.category=newName;}
+    DB.categories[i]=newName;delete DB.catIds[oldName];DB.catIds[newName]=catId;
+    toast('Categoría actualizada');renderCategoryManagerList();
+  }catch(e){toast('Error: '+e.message,'err');}
 }
-function removeCategory(i){
+async function removeCategory(i){
   const name=DB.categories[i];
   const count=DB.products.filter(p=>p.category===name).length;
-  if(count>0){toast(`No se puede eliminar: ${count} producto(s) usan esta categoría`,'err');return;}
+  if(count>0){toast(`No se puede eliminar: ${count} producto(s) la usan`,'err');return;}
   if(!confirm(`¿Eliminar la categoría "${name}"?`))return;
-  const catId = DB.categoryIds[name];
-  (async()=>{
-    try{
-      if(catId) await sbDelete('categories', catId);
-      DB.categories.splice(i,1);
-      delete DB.categoryIds[name];
-      toast('Categoría eliminada'); renderCategoryManagerList();
-    }catch(e){ toast('Error: '+e.message,'err'); }
-  })();
+  try{
+    const catId=DB.catIds[name];if(catId)await sbDel('categories',catId);
+    DB.categories.splice(i,1);delete DB.catIds[name];
+    toast('Categoría eliminada');renderCategoryManagerList();
+  }catch(e){toast('Error: '+e.message,'err');}
 }
-function addCategory(){
-  const input=document.getElementById('newCatInput');
-  const name=input.value.trim();
+async function addCategory(){
+  const input=document.getElementById('newCatInput');const name=input.value.trim();
   if(!name){toast('Ingresá un nombre','err');return;}
   if(DB.categories.includes(name)){toast('Ya existe esa categoría','err');return;}
-  (async()=>{
-    try{
-      const [res]=await sbInsert('categories',{name});
-      DB.categories.push(name);
-      DB.categoryIds[name]=res.id;
-      input.value=''; toast('Categoría agregada'); renderCategoryManagerList();
-    }catch(e){ toast('Error: '+e.message,'err'); }
-  })();
+  try{
+    const[res]=await sbPost('categories',{name});
+    DB.categories.push(name);DB.catIds[name]=res.id;
+    input.value='';toast('Categoría agregada');renderCategoryManagerList();
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 
 // ── USUARIOS ──────────────────────────────────────────────────────
@@ -1194,25 +1090,23 @@ function renderUsers(el){
       <div class="section-title">Usuarios</div>
       <button class="btn-sm accent" onclick="openUserForm()">${I.plus} Nuevo</button>
     </div>
-    <div class="table-wrap">
-      <div class="tbl-scroll"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Movimientos</th><th></th></tr></thead><tbody>
+    <div class="table-wrap"><div class="tbl-scroll"><table>
+      <thead><tr><th>Usuario</th><th>Rol</th><th>Movimientos</th><th></th></tr></thead><tbody>
       ${DB.users.map(u=>{
         const count=DB.movements.filter(m=>m.userId===u.id).length;
         return`<tr>
           <td><div style="display:flex;align-items:center;gap:9px">
             <div class="user-row-avatar" style="background:${u.color}22;color:${u.color}">${u.initials}</div>
-            <span>${u.name}</span>
-          </div></td>
+            <span>${u.name}</span></div></td>
           <td><span class="role-badge ${u.role==='admin'?'role-admin':'role-user'}">${u.role==='admin'?'Admin':'Usuario'}</span></td>
           <td style="color:var(--text2)">${count}</td>
           <td><div class="action-btns">
-            <button class="icon-btn" onclick="openUserForm('${u.id}')" title="Editar">${I.edit}</button>
-            ${u.id!==currentUser.id?`<button class="icon-btn del" onclick="deleteUser('${u.id}')" title="Eliminar">${I.trash}</button>`:''}
+            <button class="icon-btn" onclick="openUserForm('${u.id}')">${I.edit}</button>
+            ${u.id!==currentUser.id?`<button class="icon-btn del" onclick="deleteUser('${u.id}')">${I.trash}</button>`:''}
           </div></td>
         </tr>`;
       }).join('')}
-      </tbody></table></div>
-    </div>`;
+      </tbody></table></div></div>`;
 }
 function openUserForm(id){
   const u=id?DB.users.find(x=>x.id===id):null;
@@ -1231,10 +1125,10 @@ function openUserForm(id){
       </div>
       <div class="form-row"><label>Contraseña</label>
         <div style="display:flex;gap:8px">
-          <input type="password" id="fu-pwd" placeholder="Contraseña de acceso" value="${u?u.password:'1234'}" style="flex:1;font-family:monospace" maxlength="20">
-          <button class="icon-btn" type="button" title="Mostrar/ocultar" onclick="toggleUserPwdVisibility()">${I.search}</button>
+          <input type="password" id="fu-pwd" placeholder="Contraseña" value="${u?u.password:'1234'}" style="flex:1;font-family:monospace" maxlength="20">
+          <button class="icon-btn" onclick="const f=document.getElementById('fu-pwd');f.type=f.type==='password'?'text':'password'">${I.search}</button>
         </div>
-        <div style="font-size:11px;color:var(--text3);margin-top:5px">El usuario la usará para iniciar sesión. Podés cambiarla cuando quieras.</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:5px">Contraseña por defecto: 1234</div>
       </div>
       <div class="form-row"><label>Color de avatar</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="colorPicker">
@@ -1248,10 +1142,6 @@ function openUserForm(id){
       </div>
     </div>
   </div>`;
-}
-function toggleUserPwdVisibility(){
-  const f=document.getElementById('fu-pwd');
-  f.type=f.type==='password'?'text':'password';
 }
 function selectColor(c){
   document.getElementById('fu-color').value=c;
@@ -1267,25 +1157,20 @@ async function saveUser(id){
   try{
     const body={name,initials,role,color,password};
     if(id){
-      await sbUpdate('app_users', id, body);
-      const u=DB.users.find(x=>x.id===id);
-      if(u)Object.assign(u,body);
+      await sbPatch('app_users',id,body);
+      const u=DB.users.find(x=>x.id===id);if(u)Object.assign(u,body);
       toast('Usuario actualizado');
     }else{
-      const [res]=await sbInsert('app_users', body);
-      DB.users.push(res);
-      toast('Usuario creado');
+      const[res]=await sbPost('app_users',body);
+      DB.users.push(res);toast('Usuario creado');
     }
-    closeOverlay(); navigate('users');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+    closeOverlay();navigate('users');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 async function deleteUser(id){
   if(!confirm('¿Eliminar este usuario?'))return;
-  try{
-    await sbDelete('app_users', id);
-    DB.users=DB.users.filter(u=>u.id!==id);
-    toast('Usuario eliminado'); navigate('users');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+  try{await sbDel('app_users',id);DB.users=DB.users.filter(u=>u.id!==id);toast('Usuario eliminado');navigate('users');}
+  catch(e){toast('Error: '+e.message,'err');}
 }
 
 // ── EXPORT ────────────────────────────────────────────────────────
@@ -1294,7 +1179,7 @@ function renderExport(el){
     <div class="section-header"><div class="section-title">Exportar datos</div></div>
     <div class="export-grid">
       <div class="table-wrap" style="padding:18px">
-        <div style="margin-bottom:10px;color:var(--success);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500">${I.download} Movimientos</div>
+        <div style="margin-bottom:10px;color:var(--success);font-size:13px;font-weight:500">${I.download} Movimientos</div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Código · Producto · Fecha · Tipo · Usuario</div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn-sm success" onclick="exportCSV('movements')">${I.download} CSV</button>
@@ -1302,20 +1187,18 @@ function renderExport(el){
         </div>
       </div>
       <div class="table-wrap" style="padding:18px">
-        <div style="margin-bottom:10px;color:var(--accent);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500">${I.nav_products} Inventario</div>
+        <div style="margin-bottom:10px;color:var(--accent);font-size:13px;font-weight:500">${I.nav_products} Inventario</div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Código · Nombre · Categoría · Stock</div>
         <button class="btn-sm success" onclick="exportCSV('products')">${I.download} CSV</button>
       </div>
     </div>
     <div class="section-header"><div class="section-title" style="font-size:13px">Vista previa movimientos</div></div>
     <div class="table-wrap"><div class="tbl-scroll"><table><thead><tr><th>Código</th><th>Producto</th><th>Fecha</th><th>Tipo</th><th>Cant.</th><th>Usuario</th></tr></thead><tbody>
-    ${DB.movements.slice(-10).reverse().map(m=>`<tr>
+    ${DB.movements.slice(0,10).map(m=>`<tr>
       <td style="font-family:monospace;font-size:11px;color:var(--accent);white-space:nowrap">${m.code}</td>
-      <td>${m.productName}</td>
-      <td style="color:var(--text3);white-space:nowrap">${m.date}</td>
+      <td>${m.productName}</td><td style="color:var(--text3);white-space:nowrap">${m.date}</td>
       <td><span class="pill ${m.type==='Entrada'?'pill-in':'pill-out'}">${m.type}</span></td>
-      <td>${m.qty}</td>
-      <td style="white-space:nowrap">${m.userName}</td>
+      <td>${m.qty}</td><td style="white-space:nowrap">${m.userName}</td>
     </tr>`).join('')}
     </tbody></table></div></div>`;
 }
@@ -1328,13 +1211,250 @@ function exportCSV(type){
     csv='Codigo,Nombre,Categoria,Stock,Unidad,StockMinimo\n'+DB.products.map(p=>`${p.code},${p.name},${p.category},${p.stock},${p.unit},${p.minStock}`).join('\n');
     filename='inventario_productos.csv';
   }else if(type==='movements_json'){
-    const blob=new Blob([JSON.stringify(DB.movements,null,2)],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='movimientos.json';a.click();
+    const b=new Blob([JSON.stringify(DB.movements,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='movimientos.json';a.click();
     toast('JSON exportado');return;
   }
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;a.click();
   toast('CSV exportado');
+}
+
+// ── IMPORTAR PRODUCTOS ────────────────────────────────────────────
+let importRows=[];
+
+function openImportPanel(){
+  document.getElementById('overlayContainer').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeOverlay()">
+    <div class="panel" style="max-width:680px">
+      <div class="panel-title">${I.upload} Importar productos <button class="icon-btn" onclick="closeOverlay()">${I.x}</button></div>
+
+      <!-- ESTRUCTURA -->
+      <div style="background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px">Estructura requerida del archivo</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">
+            <thead><tr style="border-bottom:1px solid var(--border)">
+              ${['code','name','category','stock','min_stock','unit'].map(h=>`<th style="padding:6px 10px;text-align:left;color:var(--accent);font-family:monospace;font-weight:600">${h}</th>`).join('')}
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--border)20">
+                ${['EPP-CSC-001','Casco de seguridad','EPP','45','10','u'].map(v=>`<td style="padding:6px 10px;color:var(--text2);font-size:12px">${v}</td>`).join('')}
+              </tr>
+              <tr>
+                ${['MAT-UTP-005','Cable UTP cat6','Materiales OyM','120','50','m'].map(v=>`<td style="padding:6px 10px;color:var(--text2);font-size:12px">${v}</td>`).join('')}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${[
+            ['code','Código único del producto (no puede repetirse)'],
+            ['name','Nombre completo del producto'],
+            ['category','Debe coincidir con una categoría existente o se crea automáticamente'],
+            ['stock','Stock actual — número entero (ej: 45)'],
+            ['min_stock','Stock mínimo antes de alertar — número entero (ej: 10)'],
+            ['unit','Unidad: u, caja, m, kg, lata, bolsa, par, etc.'],
+          ].map(([k,v])=>`<div style="font-size:11px;color:var(--text3)"><span style="color:var(--accent);font-family:monospace;font-weight:500">${k}:</span> ${v}</div>`).join('')}
+        </div>
+        <div style="margin-top:12px;padding:8px 12px;background:#0ea5e910;border:1px solid #0ea5e930;border-radius:8px;font-size:11px;color:var(--text2)">
+          <strong style="color:var(--accent)">Formatos aceptados:</strong> CSV (separado por coma <code>,</code> o punto y coma <code>;</code>) · Excel (.xlsx) — primera fila = encabezados, una hoja.
+          Si el código ya existe en el catálogo, el producto se <strong>actualiza</strong>. Si es nuevo, se <strong>agrega</strong>.
+        </div>
+      </div>
+
+      <!-- SELECTOR DE ARCHIVO -->
+      <div id="importDropZone" onclick="document.getElementById('importFileInput').click()"
+        style="border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:12px"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='#0ea5e910'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleImportFile(event.dataTransfer.files[0])">
+        ${I.upload}
+        <div style="font-size:14px;font-weight:500;margin-top:8px">Arrastrá el archivo acá o hacé clic para seleccionar</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">CSV o Excel (.xlsx)</div>
+      </div>
+      <input type="file" id="importFileInput" accept=".csv,.xlsx" style="display:none" onchange="handleImportFile(this.files[0])">
+
+      <!-- PREVIEW -->
+      <div id="importPreview" style="display:none">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="importSummary"></div>
+        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">
+            <thead><tr style="background:var(--navy);position:sticky;top:0">
+              ${['#','Código','Nombre','Categoría','Stock','Mín','Unidad','Estado'].map(h=>`<th style="padding:7px 10px;text-align:left;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap">${h}</th>`).join('')}
+            </tr></thead>
+            <tbody id="importTableBody"></tbody>
+          </table>
+        </div>
+        <div id="importErrors" style="display:none;padding:10px 12px;background:#ef444410;border:1px solid #ef444430;border-radius:8px;font-size:12px;color:#f87171;margin-bottom:12px"></div>
+        <div class="form-actions">
+          <button class="btn-sm" onclick="resetImport()">Cancelar</button>
+          <button class="btn-sm accent" id="importConfirmBtn" onclick="confirmImport()">${I.check} Confirmar importación</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function resetImport(){
+  importRows=[];
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importDropZone').style.display='block';
+  document.getElementById('importFileInput').value='';
+}
+
+async function handleImportFile(file){
+  if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  try{
+    if(ext==='csv'){
+      const text=await file.text();
+      parseImportCSV(text);
+    }else if(ext==='xlsx'){
+      await parseImportXLSX(file);
+    }else{
+      toast('Formato no soportado. Usá CSV o XLSX','err'); return;
+    }
+  }catch(e){ toast('Error al leer el archivo: '+e.message,'err'); }
+}
+
+function parseImportCSV(text){
+  const lines=text.trim().split(/\r?\n/);
+  if(lines.length<2){toast('El archivo está vacío o solo tiene encabezados','err');return;}
+  const sep=lines[0].includes(';')?';':',';
+  const headers=lines[0].split(sep).map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase());
+  const required=['code','name','category','stock','min_stock','unit'];
+  const missing=required.filter(r=>!headers.includes(r));
+  if(missing.length){toast(`Faltan columnas: ${missing.join(', ')}`,'err');return;}
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const cols=lines[i].split(sep).map(c=>c.trim().replace(/^"|"$/g,''));
+    const row={};
+    headers.forEach((h,idx)=>row[h]=cols[idx]||'');
+    rows.push(row);
+  }
+  showImportPreview(rows);
+}
+
+async function parseImportXLSX(file){
+  // Load SheetJS dynamically
+  if(!window.XLSX){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload=res; s.onerror=()=>rej(new Error('No se pudo cargar la librería XLSX'));
+      document.head.appendChild(s);
+    });
+  }
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array'});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const data=XLSX.utils.sheet_to_json(ws,{defval:''});
+  // normalize headers to lowercase
+  const rows=data.map(r=>{
+    const n={};
+    Object.keys(r).forEach(k=>n[k.trim().toLowerCase()]=String(r[k]).trim());
+    return n;
+  });
+  const required=['code','name','category','stock','min_stock','unit'];
+  if(rows.length&&required.some(k=>!(k in rows[0]))){
+    const missing=required.filter(k=>!(k in rows[0]));
+    toast(`Faltan columnas: ${missing.join(', ')}`,'err'); return;
+  }
+  showImportPreview(rows);
+}
+
+function showImportPreview(rows){
+  importRows=rows;
+  const errors=[];
+  const tbody=[];
+  let newCount=0,updateCount=0;
+
+  rows.forEach((r,i)=>{
+    const rowErrors=[];
+    if(!r.code) rowErrors.push('código vacío');
+    if(!r.name) rowErrors.push('nombre vacío');
+    if(!r.category) rowErrors.push('categoría vacía');
+    const stock=parseInt(r.stock);
+    const minStock=parseInt(r.min_stock);
+    if(isNaN(stock)) rowErrors.push('stock inválido');
+    if(isNaN(minStock)) rowErrors.push('min_stock inválido');
+    if(!r.unit) rowErrors.push('unidad vacía');
+
+    const exists=DB.products.find(p=>p.code.toLowerCase()===r.code.toLowerCase());
+    const status=rowErrors.length>0?'err':exists?'update':'new';
+    if(status==='new') newCount++;
+    if(status==='update') updateCount++;
+    if(rowErrors.length) errors.push(`Fila ${i+2}: ${rowErrors.join(', ')}`);
+
+    const statusPill={
+      'new':`<span style="background:#10b98114;color:#34d399;border:1px solid #10b98130;border-radius:12px;padding:2px 7px;font-size:10px;white-space:nowrap">Nuevo</span>`,
+      'update':`<span style="background:#f59e0b14;color:#fbbf24;border:1px solid #f59e0b30;border-radius:12px;padding:2px 7px;font-size:10px;white-space:nowrap">Actualiza</span>`,
+      'err':`<span style="background:#ef444414;color:#f87171;border:1px solid #ef444430;border-radius:12px;padding:2px 7px;font-size:10px;white-space:nowrap">Error</span>`,
+    }[status];
+
+    tbody.push(`<tr style="border-bottom:1px solid var(--border)${rowErrors.length?';background:#ef444408':''}">
+      <td style="padding:6px 10px;color:var(--text3)">${i+1}</td>
+      <td style="padding:6px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${r.code||'—'}</td>
+      <td style="padding:6px 10px">${r.name||'—'}</td>
+      <td style="padding:6px 10px">${r.category||'—'}</td>
+      <td style="padding:6px 10px">${r.stock||'0'}</td>
+      <td style="padding:6px 10px">${r.min_stock||'0'}</td>
+      <td style="padding:6px 10px">${r.unit||'—'}</td>
+      <td style="padding:6px 10px">${statusPill}</td>
+    </tr>`);
+  });
+
+  document.getElementById('importDropZone').style.display='none';
+  document.getElementById('importPreview').style.display='block';
+  document.getElementById('importSummary').innerHTML=
+    `<strong style="color:var(--text)">${rows.length} filas leídas</strong> — 
+     <span style="color:#34d399">${newCount} nuevos</span> · 
+     <span style="color:#fbbf24">${updateCount} actualizaciones</span>
+     ${errors.length?`· <span style="color:#f87171">${errors.length} con errores (se omiten)</span>`:''}`;
+  document.getElementById('importTableBody').innerHTML=tbody.join('');
+
+  const errDiv=document.getElementById('importErrors');
+  if(errors.length){
+    errDiv.style.display='block';
+    errDiv.innerHTML='<strong>Filas con errores (no se importan):</strong><br>'+errors.join('<br>');
+  }else{
+    errDiv.style.display='none';
+  }
+  document.getElementById('importConfirmBtn').disabled=newCount+updateCount===0;
+}
+
+async function confirmImport(){
+  const validRows=importRows.filter(r=>{
+    return r.code&&r.name&&r.category&&!isNaN(parseInt(r.stock))&&!isNaN(parseInt(r.min_stock))&&r.unit;
+  });
+  if(!validRows.length){toast('No hay filas válidas para importar','err');return;}
+
+  const btn=document.getElementById('importConfirmBtn');
+  btn.disabled=true; btn.textContent='Importando...';
+
+  let ok=0,fail=0;
+  for(const r of validRows){
+    try{
+      const body={code:r.code.trim(),name:r.name.trim(),category:r.category.trim(),stock:parseInt(r.stock)||0,min_stock:parseInt(r.min_stock)||0,unit:r.unit.trim()};
+      const exists=DB.products.find(p=>p.code.toLowerCase()===body.code.toLowerCase());
+      if(exists){
+        await sbPatch('products',exists.id,body);
+        Object.assign(exists,{...body,minStock:body.min_stock});
+      }else{
+        // create category if new
+        if(!DB.categories.includes(body.category)){
+          try{const[res]=await sbPost('categories',{name:body.category});DB.categories.push(body.category);DB.catIds[body.category]=res.id;}catch(_){}
+        }
+        const[res]=await sbPost('products',body);
+        DB.products.push({...res,minStock:res.min_stock});
+      }
+      ok++;
+    }catch(e){ fail++; }
+  }
+  closeOverlay();
+  toast(`Importación completada: ${ok} productos${fail?` · ${fail} errores`:''}`, fail>0?'err':'ok');
+  navigate('products');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
